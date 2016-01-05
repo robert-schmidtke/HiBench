@@ -36,6 +36,8 @@ hibench.spark.master		yarn-client
 
 #hibench.hadoop.version		hadoop1
 
+#hibench.hadoop.configure.dir   ${hibench.hadoop.home}/etc/hadoop
+
 # `hibench.spark.version` is used to choose which sparkbench workload
 # jar. Mostly situation it'll be auto probed. Please override if spark
 # version is not probed correctly. For spark version after 1.5, please
