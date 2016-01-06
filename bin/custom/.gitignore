@@ -1,4 +1,5 @@
 hibench-aggregation.o*
 hibench-all.o*
+hibench-pagerank.o*
 hibench-wordcount.o*
 launch.sh
