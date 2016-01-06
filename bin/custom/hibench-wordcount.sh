@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#PBS -N spark-wordcount
+#PBS -N hibench-wordcount
 #PBS -l walltime=05:00:00
 #PBS -l nodes=4:ppn=1
 #PBS -j oe
