@@ -33,7 +33,7 @@ EOL
 sleep 60s
 
 \$HIBENCH_HOME/workloads/aggregation/prepare/prepare.sh
-\$HIBENCH_HOME/workloads/aggregation/spark/scala/bin/run.sh
+\$HIBENCH_HOME/workloads/aggregation/mapreduce/bin/run.sh
 
 $HOME/workspace/HiBench/bin/custom/stop-hdfs-ssh.sh
 EOF
