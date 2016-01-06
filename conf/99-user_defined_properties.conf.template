@@ -80,7 +80,8 @@ spark.akka.frameSize          1000
 spark.akka.timeout            600
 
 # mllib will use KyroSerializer, ensure the buffer is large enough
-spark.kryoserializer.buffer.mb	 2000
+#spark.kryoserializer.buffer.mb	 2000
+spark.kryoserializer.buffer 2000m
 
 # Data scale, Compression profile selection
 #------------------------------------------
