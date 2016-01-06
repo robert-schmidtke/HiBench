@@ -15,7 +15,7 @@
     <properties>
         <!-- You can rewrite these properties to identify different repo and file. -->
         <repo>http://archive.apache.org</repo>
-        <file>dist/hive/hive-0.12.0/hive-0.12.0-bin.tar.gz</file>
+        <file>dist/hive/hive-1.2.1/apache-hive-1.2.1-bin.tar.gz</file>
     </properties>
 
     <build>
