@@ -17,7 +17,7 @@ public class RawData {
 
 	private static Random rand = new Random(11);
 
-	private static String dict = "/usr/share/dict/words";
+	private static String dict = "/usr/share/dict/american";
 	private static int numSourceWords = 1000;
 	private static int numSourceUAgents = 2000;
 
@@ -201,10 +201,12 @@ public class RawData {
 			BufferedReader br = new BufferedReader(fr);
 			
 			while (len < size) {
-				String word = br.readLine() + "\n";
-//				if (null == word) break;
+				String word = br.readLine();
+				if (null == word) {
+					break;
+				}
 				
-				fout.write(word.getBytes("UTF-8"));
+				fout.write((word + "\n").getBytes("UTF-8"));
 				len++;
 			}
 			br.close();
