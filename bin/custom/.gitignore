@@ -1,6 +1,7 @@
 hibench-aggregation.o*
 hibench-all.o*
 hibench-bayes.o*
+hibench-dfsioe.o*
 hibench-kmeans.o*
 hibench-nutchindexing.o*
 hibench-pagerank.o*
