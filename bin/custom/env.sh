@@ -5,7 +5,9 @@ if [ -z $PBS_JOBID ]; then
   exit 1
 fi
 
-export WORK=/gfs1/work/$USER
+if [ -z $WORK ]; then
+  export WORK=/gfs1/work/$USER
+fi
 
 export HOSTNAME=$(hostname)
 
@@ -31,5 +33,5 @@ export HADOOP_DATANODES=(${HADOOP_NODES[@]:1})
 export NUM_SSDS=8
 
 # node-local directory for HDFS
-export HDFS_LOCAL_DIR="$USER/hdfs/$PBS_JOBID"
+export HDFS_LOCAL_DIR="hdfs/$PBS_JOBID"
 export HDFS_LOCAL_LOG_DIR="$HDFS_LOCAL_DIR/log"
