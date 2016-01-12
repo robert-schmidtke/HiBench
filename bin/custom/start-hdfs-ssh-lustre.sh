@@ -103,10 +103,6 @@ for datanode in ${HADOOP_DATANODES[@]}; do
 
   cat >> $hadoop_datanode_hdfs_site << EOF
   <property>
-    <name>dfs.namenode.rpc-address</name>
-    <value>$HADOOP_NAMENODE:8020</value>
-  </property>
-  <property>
     <name>dfs.datanode.address</name>
     <value>$datanode:50010</value>
   </property>
