@@ -48,13 +48,19 @@ cat > $HADOOP_CONF_DIR/core-site.xml << EOF
   </property>
   <property>
     <name>io.file.buffer.size</name>
-    <value>1048576</value>
+    <value>65536</value>
+  </property>
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>/tmp/$USER/hadoop-tmp</value>
   </property>
 </configuration>
 EOF
 
 # name node configuration
 mkdir -p $HADOOP_CONF_DIR/$HADOOP_NAMENODE
+mkdir -p $WORK/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE
+mkdir -p $WORK/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp
 export HADOOP_NAMENODE_HDFS_SITE=$HADOOP_CONF_DIR/$HADOOP_NAMENODE/hdfs-site.xml
 cp $HADOOP_CONF_DIR/hdfs-site.xml $HADOOP_NAMENODE_HDFS_SITE
 
@@ -79,10 +85,6 @@ cat >> $HADOOP_NAMENODE_HDFS_SITE << EOF
     <name>dfs.replication</name>
     <value>$HDFS_REPLICATION</value>
   </property>
-  <property>
-    <name>dfs.replication.max</name>
-    <value>$HDFS_REPLICATION</value>
-  </property>
 </configuration>
 EOF
 
@@ -91,6 +93,8 @@ cp $HADOOP_NAMENODE_HDFS_SITE $HADOOP_CONF_DIR/hdfs-site.xml
 # data node configurations
 for datanode in ${HADOOP_DATANODES[@]}; do
   mkdir -p $HADOOP_CONF_DIR/$datanode
+  mkdir -p $WORK/$HDFS_LOCAL_DIR/data-$datanode
+  mkdir -p $WORK/$HDFS_LOCAL_DIR/data-$datanode-tmp
   hadoop_datanode_hdfs_site=$HADOOP_CONF_DIR/$datanode/hdfs-site.xml
   cp $HADOOP_CONF_DIR/hdfs-site.xml $hadoop_datanode_hdfs_site
 
@@ -98,6 +102,10 @@ for datanode in ${HADOOP_DATANODES[@]}; do
   printf '%s\n' "${line_number}s#.*##" w  | ed -s "$hadoop_datanode_hdfs_site"
 
   cat >> $hadoop_datanode_hdfs_site << EOF
+  <property>
+    <name>dfs.namenode.rpc-address</name>
+    <value>$HADOOP_NAMENODE:8020</value>
+  </property>
   <property>
     <name>dfs.datanode.address</name>
     <value>$datanode:50010</value>
@@ -127,10 +135,34 @@ cat > $HADOOP_CONF_DIR/mapred-site.xml << EOF
     <name>mapreduce.client.submit.file.replication</name>
     <value>$HDFS_REPLICATION</value>
   </property>
+  <property>
+    <name>mapreduce.map.memory.mb</name>
+    <value>4096</value>
+  </property>
+  <property>
+    <name>mapreduce.map.java.opts</name>
+    <value>-Xmx4096M</value>
+  </property>
+  <property>
+    <name>mapreduce.reduce.memory.mb</name>
+    <value>8192</value>
+  </property>
+  <property>
+    <name>mapreduce.reduce.java.opts</name>
+    <value>-Xmx8192M</value>
+  </property>
+  <property>
+    <name>mapreduce.task.io.sort.mb</name>
+    <value>1024</value>
+  </property>
+  <property>
+    <name>mapreduce.task.io.sort.factor</name>
+    <value>32</value>
+  </property>
 </configuration>
 EOF
 
-NODE_MEMORY=$(awk '/MemTotal/ {printf( "%.2d\n", ($2 / 1024) * 0.4 )}' /proc/meminfo)
+NODE_MEMORY=$(awk '/MemTotal/ {printf( "%.2d\n", ($2 / 1024) * 0.7 )}' /proc/meminfo)
 cat > $HADOOP_CONF_DIR/yarn-site.xml << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -185,6 +217,18 @@ done
 mkdir -p $WORK/$HDFS_LOCAL_DIR
 mkdir -p $WORK/$HDFS_LOCAL_LOG_DIR
 
+mkdir -p /tmp/$USER
+rm -rf /tmp/$USER/hadoop-tmp
+ln -s $WORK/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp /tmp/$USER/hadoop-tmp
+
+for datanode in ${HADOOP_DATANODES[@]}; do
+  echo -n "Creating symlink on $datanode ..."
+  ssh $datanode "mkdir -p /tmp/$USER"
+  ssh $datanode "rm -rf /tmp/$USER/hadoop-tmp"
+  ssh $datanode "ln -s $WORK/$HDFS_LOCAL_DIR/data-$datanode-tmp /tmp/$USER/hadoop-tmp"
+  echo "done"
+done
+
 export HADOOP_USER_CLASSPATH_FIRST="YES"
 export HADOOP_CLASSPATH="$HADOOP_CONF_DIR/$HADOOP_NAMENODE:$HADOOP_CLASSPATH"
 
@@ -198,7 +242,7 @@ Y
 EOF
 echo "Formatting NameNode done."
 
-export HADOOP_HEAPSIZE=$(awk '/MemTotal/ {printf( "%.2d\n", ($2 / 1024) * 0.05 )}' /proc/meminfo)
+export HADOOP_HEAPSIZE=$(awk '/MemTotal/ {printf( "%.2d\n", ($2 / 1024) * 0.20 )}' /proc/meminfo)
 
 $HADOOP_PREFIX/sbin/start-dfs.sh --config $HADOOP_CONF_DIR
 
