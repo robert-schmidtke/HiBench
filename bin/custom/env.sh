@@ -12,6 +12,7 @@ fi
 export HOSTNAME=$(hostname)
 
 export HADOOP_PREFIX="$HOME/hadoop-2.7.1"
+#export HADOOP_PREFIX="$HOME/workspace/hadoop/hadoop-dist/target/hadoop-2.7.1"
 export HADOOP_HOME=$HADOOP_PREFIX
 export HADOOP_CONF_DIR="$HADOOP_PREFIX/conf/$PBS_JOBID"
 
