@@ -5,10 +5,6 @@ if [ -z $PBS_JOBID ]; then
   exit 1
 fi
 
-if [ -z $WORK ]; then
-  export WORK=/gfs1/work/$USER
-fi
-
 export HOSTNAME=$(hostname)
 
 export HADOOP_PREFIX="$HOME/hadoop-2.7.1"
@@ -32,8 +28,9 @@ export HADOOP_NAMENODE=${HADOOP_NODES[0]}
 export HADOOP_DATANODES=(${HADOOP_NODES[@]:1})
 export NUM_HADOOP_DATANODES=${#HADOOP_DATANODES[@]}
 
+export NUM_GFS=2
 export NUM_SSDS=8
 
 # node-local directory for HDFS
-export HDFS_LOCAL_DIR="hdfs/$PBS_JOBID"
+export HDFS_LOCAL_DIR="$USER/hdfs/$PBS_JOBID"
 export HDFS_LOCAL_LOG_DIR="$HDFS_LOCAL_DIR/log"
