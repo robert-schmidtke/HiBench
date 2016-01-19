@@ -24,4 +24,6 @@ $HADOOP_PREFIX/sbin/stop-dfs.sh --config $HADOOP_CONF_DIR
 
 $HADOOP_PREFIX/sbin/stop-yarn.sh --config $HADOOP_CONF_DIR
 
+$HADOOP_PREFIX/sbin/mr-jobhistory-daemon.sh --config $HADOOP_CONF_DIR stop historyserver
+
 echo "Stopping Hadoop done."

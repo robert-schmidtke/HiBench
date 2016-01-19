@@ -99,7 +99,7 @@ for datanode in ${HADOOP_DATANODES[@]}; do
 
   mkdir -p $HADOOP_CONF_DIR/$datanode
   mkdir -p /flash/scratch${ssd_index}/$HDFS_LOCAL_DIR/data-$datanode
-  mkdir -p /flash/scratch${ssd_index}/data-$datanode-tmp
+  mkdir -p /flash/scratch${ssd_index}/$HDFS_LOCAL_DIR/data-$datanode-tmp
   hadoop_datanode_hdfs_site=$HADOOP_CONF_DIR/$datanode/hdfs-site.xml
   cp $HADOOP_CONF_DIR/hdfs-site.xml $hadoop_datanode_hdfs_site
 
@@ -128,6 +128,14 @@ cat > $HADOOP_CONF_DIR/mapred-site.xml << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
+  <property>
+    <name>mapreduce.jobhistory.address</name>
+    <value>$HADOOP_NAMENODE:10020</value>
+  </property>
+  <property>
+    <name>mapreduce.jobhistory.webapp.address</name>
+    <value>$HADOOP_NAMENODE:19888</value>
+  </property>
   <property>
     <name>mapreduce.framework.name</name>
     <value>yarn</value>
@@ -220,7 +228,7 @@ mkdir -p /flash/scratch1/$HDFS_LOCAL_LOG_DIR
 
 mkdir -p /tmp/$USER
 rm -rf /tmp/$USER/hadoop-tmp
-ln -s /flash/scratch1/name-$HADOOP_NAMENODE-tmp /tmp/$USER/hadoop-tmp
+ln -s /flash/scratch1/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp /tmp/$USER/hadoop-tmp
 
 datanode_id=0
 for datanode in ${HADOOP_DATANODES[@]}; do
@@ -230,7 +238,7 @@ for datanode in ${HADOOP_DATANODES[@]}; do
   echo -n "Creating symlink on $datanode ..."
   ssh $datanode "mkdir -p /tmp/$USER"
   ssh $datanode "rm -rf /tmp/$USER/hadoop-tmp"
-  ssh $datanode "ln -s /flash/scratch${ssd_index}/data-$datanode-tmp /tmp/$USER/hadoop-tmp"
+  ssh $datanode "ln -s /flash/scratch${ssd_index}/$HDFS_LOCAL_DIR/data-$datanode-tmp /tmp/$USER/hadoop-tmp"
   echo "done"
 done
 
@@ -259,5 +267,7 @@ export YARN_RESOURCEMANAGER_LOG=/flash/scratch1/$HDFS_LOCAL_LOG_DIR/resourcemana
 export YARN_HEAPSIZE=$HADOOP_HEAPSIZE
 
 $HADOOP_PREFIX/sbin/start-yarn.sh --config $HADOOP_CONF_DIR
+
+$HADOOP_PREFIX/sbin/mr-jobhistory-daemon.sh --config $HADOOP_CONF_DIR start historyserver
 
 echo "Starting Hadoop done."

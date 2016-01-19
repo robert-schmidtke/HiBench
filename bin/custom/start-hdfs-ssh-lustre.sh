@@ -59,8 +59,8 @@ EOF
 
 # name node configuration
 mkdir -p $HADOOP_CONF_DIR/$HADOOP_NAMENODE
-mkdir -p $WORK/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE
-mkdir -p $WORK/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp
+mkdir -p /gfs1/work/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE
+mkdir -p /gfs1/work/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp
 export HADOOP_NAMENODE_HDFS_SITE=$HADOOP_CONF_DIR/$HADOOP_NAMENODE/hdfs-site.xml
 cp $HADOOP_CONF_DIR/hdfs-site.xml $HADOOP_NAMENODE_HDFS_SITE
 
@@ -75,7 +75,7 @@ cat >> $HADOOP_NAMENODE_HDFS_SITE << EOF
   </property>
   <property>
     <name>dfs.namenode.name.dir</name>
-    <value>file://$WORK/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE</value>
+    <value>file:///gfs1/work/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE</value>
   </property>
   <property>
     <name>dfs.blocksize</name>
@@ -91,10 +91,15 @@ EOF
 cp $HADOOP_NAMENODE_HDFS_SITE $HADOOP_CONF_DIR/hdfs-site.xml
 
 # data node configurations
+datanode_id=0
 for datanode in ${HADOOP_DATANODES[@]}; do
+  # index between 1 and NUM_GFS because there are NUM_GFS mounts
+  let "gfs_index=${datanode_id}%${NUM_GFS}+1"
+  datanode_id=$(($datanode_id + 1))
+
   mkdir -p $HADOOP_CONF_DIR/$datanode
-  mkdir -p $WORK/$HDFS_LOCAL_DIR/data-$datanode
-  mkdir -p $WORK/$HDFS_LOCAL_DIR/data-$datanode-tmp
+  mkdir -p /gfs${gfs_index}/work/$HDFS_LOCAL_DIR/data-$datanode
+  mkdir -p /gfs${gfs_index}/work/$HDFS_LOCAL_DIR/data-$datanode-tmp
   hadoop_datanode_hdfs_site=$HADOOP_CONF_DIR/$datanode/hdfs-site.xml
   cp $HADOOP_CONF_DIR/hdfs-site.xml $hadoop_datanode_hdfs_site
 
@@ -112,7 +117,7 @@ for datanode in ${HADOOP_DATANODES[@]}; do
   </property>
   <property>
     <name>dfs.datanode.data.dir</name>
-    <value>file://$WORK/$HDFS_LOCAL_DIR/data-$datanode</value>
+    <value>file:///gfs${gfs_index}/work/$HDFS_LOCAL_DIR/data-$datanode</value>
   </property>
 </configuration>
 EOF
@@ -123,6 +128,14 @@ cat > $HADOOP_CONF_DIR/mapred-site.xml << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
+  <property>
+    <name>mapreduce.jobhistory.address</name>
+    <value>$HADOOP_NAMENODE:10020</value>
+  </property>
+  <property>
+    <name>mapreduce.jobhistory.webapp.address</name>
+    <value>$HADOOP_NAMENODE:19888</value>
+  </property>
   <property>
     <name>mapreduce.framework.name</name>
     <value>yarn</value>
@@ -210,25 +223,29 @@ EOF
 done
 
 # start name node
-mkdir -p $WORK/$HDFS_LOCAL_DIR
-mkdir -p $WORK/$HDFS_LOCAL_LOG_DIR
+mkdir -p /gfs1/work/$HDFS_LOCAL_DIR
+mkdir -p /gfs1/work/$HDFS_LOCAL_LOG_DIR
 
 mkdir -p /tmp/$USER
 rm -rf /tmp/$USER/hadoop-tmp
-ln -s $WORK/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp /tmp/$USER/hadoop-tmp
+ln -s /gfs1/work/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp /tmp/$USER/hadoop-tmp
 
+datanode_id=0
 for datanode in ${HADOOP_DATANODES[@]}; do
+  let "gfs_index=${datanode_id}%${NUM_GFS}+1"
+  datanode_id=$(($datanode_id + 1))
+
   echo -n "Creating symlink on $datanode ..."
   ssh $datanode "mkdir -p /tmp/$USER"
   ssh $datanode "rm -rf /tmp/$USER/hadoop-tmp"
-  ssh $datanode "ln -s $WORK/$HDFS_LOCAL_DIR/data-$datanode-tmp /tmp/$USER/hadoop-tmp"
+  ssh $datanode "ln -s /gfs${gfs_index}/work/$HDFS_LOCAL_DIR/data-$datanode-tmp /tmp/$USER/hadoop-tmp"
   echo "done"
 done
 
 export HADOOP_USER_CLASSPATH_FIRST="YES"
 export HADOOP_CLASSPATH="$HADOOP_CONF_DIR/$HADOOP_NAMENODE:$HADOOP_CLASSPATH"
 
-export HDFS_NAMENODE_LOG=$WORK/$HDFS_LOCAL_LOG_DIR/namenode-$(hostname).log
+export HDFS_NAMENODE_LOG=/gfs1/work/$HDFS_LOCAL_LOG_DIR/namenode-$(hostname).log
 
 echo "Formatting NameNode."
 ulimit -c unlimited
@@ -245,10 +262,12 @@ $HADOOP_PREFIX/sbin/start-dfs.sh --config $HADOOP_CONF_DIR
 # start resource manager
 export YARN_USER_CLASSPATH="$YARN_USER_CLASSPATH:$HADOOP_CONF_DIR/$(hostname)"
 
-export YARN_RESOURCEMANAGER_LOG=$WORK/$HDFS_LOCAL_LOG_DIR/resourcemanager-$(hostname).log
+export YARN_RESOURCEMANAGER_LOG=/gfs1/work/$HDFS_LOCAL_LOG_DIR/resourcemanager-$(hostname).log
 
 export YARN_HEAPSIZE=$HADOOP_HEAPSIZE
 
 $HADOOP_PREFIX/sbin/start-yarn.sh --config $HADOOP_CONF_DIR
+
+$HADOOP_PREFIX/sbin/mr-jobhistory-daemon.sh --config $HADOOP_CONF_DIR start historyserver
 
 echo "Starting Hadoop done."
