@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #PBS -N hibench-terasort
-#PBS -l walltime=05:00:00
-#PBS -l nodes=8:ppn=1
+#PBS -l walltime=10:00:00
+#PBS -l nodes=9:ppn=1
 #PBS -j oe
 #PBS -l gres=ccm
 
@@ -39,11 +39,21 @@ hibench.scale.profile huge
 dfs.replication 1
 mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
+hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * 2))
+hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * 2))
+hibench.yarn.executor.num \$NUM_HADOOP_DATANODES
+hibench.yarn.executor.memory 16G
+hibench.yarn.executor.cores 2
+hibench.yarn.driver.memory 8G
 EOL
 
 \$HIBENCH_HOME/workloads/terasort/prepare/prepare.sh
 \$HIBENCH_HOME/workloads/terasort/mapreduce/bin/run.sh
 #\$HIBENCH_HOME/workloads/terasort/spark/scala/bin/run.sh
+
+# job history files are moved to the done folder every 180s
+sleep 240s
+\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-terasort.\$PBS_JOBID-history
 
 $HOME/workspace/HiBench/bin/custom/stop-hdfs-ssh.sh
 EOF

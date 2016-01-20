@@ -47,6 +47,10 @@ EOL
 \$HIBENCH_HOME/workloads/terasort/mapreduce/bin/run.sh
 #\$HIBENCH_HOME/workloads/terasort/spark/scala/bin/run.sh
 
+# job history files are moved to the done folder every 180s
+sleep 240s
+\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-terasort-ssd.\$PBS_JOBID-history
+
 $HOME/workspace/HiBench/bin/custom/stop-hdfs-ssh.sh
 EOF
 
