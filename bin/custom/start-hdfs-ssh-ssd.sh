@@ -91,15 +91,10 @@ EOF
 cp $HADOOP_NAMENODE_HDFS_SITE $HADOOP_CONF_DIR/hdfs-site.xml
 
 # data node configurations
-datanode_id=0
 for datanode in ${HADOOP_DATANODES[@]}; do
-  # index between 1 and NUM_SSDS because there are NUM_SSDS SSDs
-  let "ssd_index=${datanode_id}%${NUM_SSDS}+1"
-  datanode_id=$(($datanode_id + 1))
-
   mkdir -p $HADOOP_CONF_DIR/$datanode
-  mkdir -p /flash/scratch${ssd_index}/$HDFS_LOCAL_DIR/data-$datanode
-  mkdir -p /flash/scratch${ssd_index}/$HDFS_LOCAL_DIR/data-$datanode-tmp
+  mkdir -p /flash/scratch1/$HDFS_LOCAL_DIR/data-$datanode
+  mkdir -p /flash/scratch1/$HDFS_LOCAL_DIR/data-$datanode-tmp
   hadoop_datanode_hdfs_site=$HADOOP_CONF_DIR/$datanode/hdfs-site.xml
   cp $HADOOP_CONF_DIR/hdfs-site.xml $hadoop_datanode_hdfs_site
 
@@ -117,7 +112,7 @@ for datanode in ${HADOOP_DATANODES[@]}; do
   </property>
   <property>
     <name>dfs.datanode.data.dir</name>
-    <value>file:///flash/scratch${ssd_index}/$HDFS_LOCAL_DIR/data-$datanode</value>
+    <value>file:///flash/scratch1/$HDFS_LOCAL_DIR/data-$datanode</value>
   </property>
 </configuration>
 EOF
@@ -230,15 +225,11 @@ mkdir -p /tmp/$USER
 rm -rf /tmp/$USER/hadoop-tmp
 ln -s /flash/scratch1/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp /tmp/$USER/hadoop-tmp
 
-datanode_id=0
 for datanode in ${HADOOP_DATANODES[@]}; do
-  let "ssd_index=${datanode_id}%${NUM_SSDS}+1"
-  datanode_id=$(($datanode_id + 1))
-
   echo -n "Creating symlink on $datanode ..."
   ssh $datanode "mkdir -p /tmp/$USER"
   ssh $datanode "rm -rf /tmp/$USER/hadoop-tmp"
-  ssh $datanode "ln -s /flash/scratch${ssd_index}/$HDFS_LOCAL_DIR/data-$datanode-tmp /tmp/$USER/hadoop-tmp"
+  ssh $datanode "ln -s /flash/scratch1/$HDFS_LOCAL_DIR/data-$datanode-tmp /tmp/$USER/hadoop-tmp"
   echo "done"
 done
 
