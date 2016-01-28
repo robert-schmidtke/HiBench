@@ -29,7 +29,6 @@ export HADOOP_DATANODES=(${HADOOP_NODES[@]:1})
 export NUM_HADOOP_DATANODES=${#HADOOP_DATANODES[@]}
 
 export NUM_GFS=2
-export NUM_SSDS=8
 
 # node-local directory for HDFS
 export HDFS_LOCAL_DIR="$USER/hdfs/$PBS_JOBID"
