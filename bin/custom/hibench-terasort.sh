@@ -15,6 +15,9 @@ cat > launch.sh << EOF
 #!/bin/bash
 
 module load java/jdk1.8.0_51
+
+$HOME/workspace/collectl-slurm/collectl_pbs.sh start
+
 source $HOME/workspace/HiBench/bin/custom/env.sh
 
 cp \$HIBENCH_HOME/conf/99-user_defined_properties.conf.template \$HIBENCH_HOME/conf/99-user_defined_properties.conf
@@ -35,7 +38,7 @@ sleep 60s
 
 cp \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf.template \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf
 cat >> \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf << EOL
-hibench.scale.profile huge
+hibench.scale.profile gigantic
 dfs.replication 1
 mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
@@ -56,6 +59,8 @@ sleep 240s
 \$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-terasort.\$PBS_JOBID-history
 
 $HOME/workspace/HiBench/bin/custom/stop-hdfs-ssh.sh
+
+$HOME/workspace/collectl-slurm/collectl_pbs.sh stop -savelogs
 EOF
 
 chmod +x launch.sh
