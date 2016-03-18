@@ -7,8 +7,8 @@ fi
 
 export HOSTNAME=$(hostname)
 
-export HADOOP_PREFIX="$HOME/hadoop-2.7.1"
-#export HADOOP_PREFIX="$HOME/workspace/hadoop/hadoop-dist/target/hadoop-2.7.1"
+#export HADOOP_PREFIX="$HOME/hadoop-2.7.1"
+export HADOOP_PREFIX="$HOME/workspace/hadoop/hadoop-dist/target/hadoop-2.7.1"
 export HADOOP_HOME=$HADOOP_PREFIX
 export HADOOP_CONF_DIR="$HADOOP_PREFIX/conf/$PBS_JOBID"
 
@@ -24,11 +24,13 @@ if [ $NUM_HADOOP_NODES -lt 2 ]; then
   exit 1
 fi
 
-export HADOOP_NAMENODE=${HADOOP_NODES[0]}
-export HADOOP_DATANODES=(${HADOOP_NODES[@]:1})
+export HADOOP_NAMENODE=$(hostname) # ${HADOOP_NODES[0]}
+hadoop_namenode=($HADOOP_NAMENODE) # tmp array var to remove from data nodes array
+export HADOOP_DATANODES=(${HADOOP_NODES[@]/$hadoop_namenode})
 export NUM_HADOOP_DATANODES=${#HADOOP_DATANODES[@]}
 
 export NUM_GFS=2
+export SCRATCH=/flash/scratch5
 
 # node-local directory for HDFS
 export HDFS_LOCAL_DIR="$USER/hdfs/$PBS_JOBID"
