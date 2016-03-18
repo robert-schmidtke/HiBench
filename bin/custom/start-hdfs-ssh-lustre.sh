@@ -29,7 +29,7 @@ source $(dirname $0)/env.sh
 
 echo "Using Hadoop Distribution in '$HADOOP_PREFIX'."
 
-echo "Starting Hadoop NameNode on '$HADOOP_NAMENODE' and DataNode(s) on '${HADOOP_DATANODES[@]}'."
+echo "Starting Hadoop NameNode on '$HADOOP_NAMENODE' and DataNode(s) on '${HADOOP_DATANODES[@]}'. (script runs on $(hostname))"
 
 mkdir -p $HADOOP_CONF_DIR
 cp $HADOOP_PREFIX/etc/hadoop/* $HADOOP_CONF_DIR
@@ -168,6 +168,10 @@ cat > $HADOOP_CONF_DIR/mapred-site.xml << EOF
     <name>mapreduce.task.io.sort.factor</name>
     <value>32</value>
   </property>
+<!--  <property>
+    <name>mapreduce.task.profile</name>
+    <value>true</value>
+  </property> -->
 </configuration>
 EOF
 
@@ -200,6 +204,14 @@ cat > $HADOOP_CONF_DIR/yarn-site.xml << EOF
     <name>yarn.resourcemanager.hostname</name>
     <value>$HADOOP_NAMENODE</value>
   </property>
+<!--  <property>
+    <name>yarn.nodemanager.sleep-delay-before-sigkill.ms</name>
+    <value>30000</value>
+  </property>
+  <property>
+    <name>mapreduce.task.profile.params</name>
+    <value>-agentlib:hprof=cpu=samples,heap=sites,force=n,thread=y,verbose=y,file=%s</value>
+  </property> -->
 </configuration>
 EOF
 
