@@ -59,8 +59,8 @@ EOF
 
 # name node configuration
 mkdir -p $HADOOP_CONF_DIR/$HADOOP_NAMENODE
-mkdir -p /flash/scratch1/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE
-mkdir -p /flash/scratch1/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp
+mkdir -p $SCRATCH/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE
+mkdir -p $SCRATCH/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp
 export HADOOP_NAMENODE_HDFS_SITE=$HADOOP_CONF_DIR/$HADOOP_NAMENODE/hdfs-site.xml
 cp $HADOOP_CONF_DIR/hdfs-site.xml $HADOOP_NAMENODE_HDFS_SITE
 
@@ -75,7 +75,7 @@ cat >> $HADOOP_NAMENODE_HDFS_SITE << EOF
   </property>
   <property>
     <name>dfs.namenode.name.dir</name>
-    <value>file:///flash/scratch1/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE</value>
+    <value>file://$SCRATCH/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE</value>
   </property>
   <property>
     <name>dfs.blocksize</name>
@@ -93,8 +93,8 @@ cp $HADOOP_NAMENODE_HDFS_SITE $HADOOP_CONF_DIR/hdfs-site.xml
 # data node configurations
 for datanode in ${HADOOP_DATANODES[@]}; do
   mkdir -p $HADOOP_CONF_DIR/$datanode
-  mkdir -p /flash/scratch1/$HDFS_LOCAL_DIR/data-$datanode
-  mkdir -p /flash/scratch1/$HDFS_LOCAL_DIR/data-$datanode-tmp
+  mkdir -p $SCRATCH/$HDFS_LOCAL_DIR/data-$datanode
+  mkdir -p $SCRATCH/$HDFS_LOCAL_DIR/data-$datanode-tmp
   hadoop_datanode_hdfs_site=$HADOOP_CONF_DIR/$datanode/hdfs-site.xml
   cp $HADOOP_CONF_DIR/hdfs-site.xml $hadoop_datanode_hdfs_site
 
@@ -112,7 +112,7 @@ for datanode in ${HADOOP_DATANODES[@]}; do
   </property>
   <property>
     <name>dfs.datanode.data.dir</name>
-    <value>file:///flash/scratch1/$HDFS_LOCAL_DIR/data-$datanode</value>
+    <value>file://$SCRATCH/$HDFS_LOCAL_DIR/data-$datanode</value>
   </property>
 </configuration>
 EOF
@@ -163,6 +163,10 @@ cat > $HADOOP_CONF_DIR/mapred-site.xml << EOF
     <name>mapreduce.task.io.sort.factor</name>
     <value>32</value>
   </property>
+<!--  <property>
+    <name>mapreduce.task.profile</name>
+    <value>true</value>
+  </property> -->
 </configuration>
 EOF
 
@@ -195,6 +199,14 @@ cat > $HADOOP_CONF_DIR/yarn-site.xml << EOF
     <name>yarn.resourcemanager.hostname</name>
     <value>$HADOOP_NAMENODE</value>
   </property>
+<!--  <property>
+    <name>yarn.nodemanager.sleep-delay-before-sigkill.ms</name>
+    <value>30000</value>
+  </property>
+  <property>
+    <name>mapreduce.task.profile.params</name>
+    <value>-agentlib:hprof=cpu=samples,heap=sites,force=n,thread=y,verbose=y,file=%s</value>
+  </property> -->
 </configuration>
 EOF
 
@@ -218,25 +230,25 @@ EOF
 done
 
 # start name node
-mkdir -p /flash/scratch1/$HDFS_LOCAL_DIR
-mkdir -p /flash/scratch1/$HDFS_LOCAL_LOG_DIR
+mkdir -p $SCRATCH/$HDFS_LOCAL_DIR
+mkdir -p $SCRATCH/$HDFS_LOCAL_LOG_DIR
 
 mkdir -p /tmp/$USER
 rm -rf /tmp/$USER/hadoop-tmp
-ln -s /flash/scratch1/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp /tmp/$USER/hadoop-tmp
+ln -s $SCRATCH/$HDFS_LOCAL_DIR/name-$HADOOP_NAMENODE-tmp /tmp/$USER/hadoop-tmp
 
 for datanode in ${HADOOP_DATANODES[@]}; do
   echo -n "Creating symlink on $datanode ..."
   ssh $datanode "mkdir -p /tmp/$USER"
   ssh $datanode "rm -rf /tmp/$USER/hadoop-tmp"
-  ssh $datanode "ln -s /flash/scratch1/$HDFS_LOCAL_DIR/data-$datanode-tmp /tmp/$USER/hadoop-tmp"
+  ssh $datanode "ln -s $SCRATCH/$HDFS_LOCAL_DIR/data-$datanode-tmp /tmp/$USER/hadoop-tmp"
   echo "done"
 done
 
 export HADOOP_USER_CLASSPATH_FIRST="YES"
 export HADOOP_CLASSPATH="$HADOOP_CONF_DIR/$HADOOP_NAMENODE:$HADOOP_CLASSPATH"
 
-export HDFS_NAMENODE_LOG=/flash/scratch1/$HDFS_LOCAL_LOG_DIR/namenode-$(hostname).log
+export HDFS_NAMENODE_LOG=$SCRATCH/$HDFS_LOCAL_LOG_DIR/namenode-$(hostname).log
 
 echo "Formatting NameNode."
 ulimit -c unlimited
@@ -253,7 +265,7 @@ $HADOOP_PREFIX/sbin/start-dfs.sh --config $HADOOP_CONF_DIR
 # start resource manager
 export YARN_USER_CLASSPATH="$YARN_USER_CLASSPATH:$HADOOP_CONF_DIR/$(hostname)"
 
-export YARN_RESOURCEMANAGER_LOG=/flash/scratch1/$HDFS_LOCAL_LOG_DIR/resourcemanager-$(hostname).log
+export YARN_RESOURCEMANAGER_LOG=$SCRATCH/$HDFS_LOCAL_LOG_DIR/resourcemanager-$(hostname).log
 
 export YARN_HEAPSIZE=$HADOOP_HEAPSIZE
 
