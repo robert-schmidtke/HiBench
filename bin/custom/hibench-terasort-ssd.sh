@@ -2,8 +2,9 @@
 
 #PBS -N hibench-terasort-ssd
 #PBS -l walltime=10:00:00
-#PBS -l nodes=9:ppn=1
+#PBS -l nodes=15:ppn=1
 #PBS -j oe
+#PBS -q mppq
 #PBS -l gres=ccm
 
 source /opt/modules/default/init/bash
@@ -16,9 +17,12 @@ cat > launch.sh << EOF
 
 module load java/jdk1.8.0_51
 
-$HOME/workspace/collectl-slurm/collectl_pbs.sh start
+echo "Starting HiBench TeraSort"
+date
 
-source $HOME/workspace/HiBench/bin/custom/env.sh
+# $HOME/workspace/collectl-slurm/collectl_pbs.sh start
+
+source $HOME/workspace/HiBench-ssd/bin/custom/env.sh
 
 cp \$HIBENCH_HOME/conf/99-user_defined_properties.conf.template \$HIBENCH_HOME/conf/99-user_defined_properties.conf
 sed -i "/^hibench\.hadoop\.home/c\hibench.hadoop.home \$HADOOP_HOME" \$HIBENCH_HOME/conf/99-user_defined_properties.conf
@@ -26,19 +30,23 @@ sed -i "/^hibench\.spark\.home/c\hibench.spark.home \$SPARK_HOME" \$HIBENCH_HOME
 sed -i "/^hibench\.hdfs\.master/c\hibench.hdfs.master hdfs://\$HADOOP_NAMENODE:8020" \$HIBENCH_HOME/conf/99-user_defined_properties.conf
 sed -i "/^#hibench\.hadoop\.configure\.dir/c\hibench.hadoop.configure.dir \$HADOOP_CONF_DIR" \$HIBENCH_HOME/conf/99-user_defined_properties.conf
 
-$HOME/workspace/HiBench/bin/custom/start-hdfs-ssh-ssd.sh 524288 1
+cat >> \$HIBENCH_HOME/conf/99-user_defined_properties.conf << EOL
+hibench.report.dir \\\${hibench.home}/report-terasort-ssd.$PBS_JOBID
+EOL
+
+$HOME/workspace/HiBench-ssd/bin/custom/start-hdfs-ssh-ssd.sh 524288 1
 
 # add Hadoop classpath to Spark after Hadoop is running
-cp \$SPARK_HOME/conf/spark-env.sh.template \$SPARK_HOME/conf/spark-env.sh
-cat >> \$SPARK_HOME/conf/spark-env.sh << EOL
-export SPARK_DIST_CLASSPATH=\$(\$HADOOP_PREFIX/bin/hadoop --config \$HADOOP_CONF_DIR classpath)
-EOL
+#cp \$SPARK_HOME/conf/spark-env.sh.template \$SPARK_HOME/conf/spark-env.sh
+#cat >> \$SPARK_HOME/conf/spark-env.sh << EOL
+#export SPARK_DIST_CLASSPATH=\$(\$HADOOP_PREFIX/bin/hadoop --config \$HADOOP_CONF_DIR classpath)
+#EOL
 
 sleep 60s
 
 cp \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf.template \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf
 cat >> \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf << EOL
-hibench.scale.profile gigantic
+hibench.scale.profile tera
 dfs.replication 1
 mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
@@ -58,9 +66,13 @@ EOL
 sleep 240s
 \$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-terasort-ssd.\$PBS_JOBID-history
 
-$HOME/workspace/HiBench/bin/custom/stop-hdfs-ssh.sh
+$HOME/workspace/HiBench-ssd/bin/custom/stop-hdfs-ssh.sh
 
-$HOME/workspace/collectl-slurm/collectl_pbs.sh stop -savelogs
+#$HOME/workspace/collectl-slurm/collectl_pbs.sh stop -savelogs
+
+echo "Stopping HiBench TeraSort"
+date
+
 EOF
 
 chmod +x launch.sh
