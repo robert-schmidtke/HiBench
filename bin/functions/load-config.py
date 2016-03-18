@@ -90,7 +90,7 @@ def execute_cmd(cmdline, timeout):
 
     return (p.returncode, stdout, stderr)
 
-def shell(cmd, timeout=5):
+def shell(cmd, timeout=60):
     assert not "${" in cmd, "Error, missing configurations: %s" % ", ".join(re.findall("\$\{(.*)\}", cmd))
     retcode, stdout, stderr = execute_cmd(cmd, timeout)
     if retcode == 'Timeout':
