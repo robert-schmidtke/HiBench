@@ -13,6 +13,7 @@ export HADOOP_HOME=$HADOOP_PREFIX
 export HADOOP_CONF_DIR="$HADOOP_PREFIX/conf/$PBS_JOBID"
 
 export SPARK_HOME="$HOME/spark-1.6.0-bin-without-hadoop"
+export FLINK_HOME="$HOME/flink-0.10.2"
 
 export HIBENCH_HOME=$HOME/workspace/HiBench
 
