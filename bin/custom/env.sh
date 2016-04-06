@@ -31,7 +31,7 @@ export HADOOP_DATANODES=(${HADOOP_NODES[@]/$hadoop_namenode})
 export NUM_HADOOP_DATANODES=${#HADOOP_DATANODES[@]}
 
 export NUM_GFS=2
-export SCRATCH=/flash/scratch5
+export SCRATCH=/flash/scratch6
 
 # node-local directory for HDFS
 export HDFS_LOCAL_DIR="$USER/hdfs/$PBS_JOBID"
