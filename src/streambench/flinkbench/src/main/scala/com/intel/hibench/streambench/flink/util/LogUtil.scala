@@ -15,16 +15,22 @@
  * limitations under the License.
  */
 
-package com.intel.hibench.streambench.flink.microbench
+package com.intel.hibench.streambench.flink.util
 
-import com.intel.hibench.streambench.flink.entity.ParamEntity
+import com.intel.hibench.streambench.flink.RunBench
 
-import org.apache.flink.streaming.api.scala._
-import org.apache.flink.streaming.api.windowing.windows.Window
-
-class IdentityJob(subClassParams: ParamEntity) extends RunBenchJobWithInit(subClassParams) {
-
-  override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
-    lines.fold((), (r: Unit, v: String) => ()).addSink(_ => Unit)
+object BenchLogUtil {
+  val file = new java.io.File(RunBench.reportDir + "/streamingbench/flink/streambenchlog.txt")
+  val out = new java.io.PrintWriter(file)
+  
+  def logMsg(msg: String) {
+    out.println(msg)
+    out.flush()
+    System.out.println(msg)
+  }
+  
+  def handleError(msg: String){
+    System.err.println(msg)
+    System.exit(1)
   }
 }

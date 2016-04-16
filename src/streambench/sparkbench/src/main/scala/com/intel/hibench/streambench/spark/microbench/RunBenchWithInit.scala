@@ -84,7 +84,8 @@ class RunBenchJobWithInit(params:ParamEntity) extends SpoutTops {
     val kafkaParams = Map(
       "metadata.broker.list" -> params.brokerList,
       "auto.offset.reset" -> "smallest",
-      "socket.receive.buffer.size" -> "1024*1024*1024"
+      // "socket.receive.buffer.size" -> "1024*1024*1024"
+      "socket.receive.buffer.bytes" -> "1073741824"
     )
     println(s"Create direct kafka stream, args:$kafkaParams")
     KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, Set(params.topic))

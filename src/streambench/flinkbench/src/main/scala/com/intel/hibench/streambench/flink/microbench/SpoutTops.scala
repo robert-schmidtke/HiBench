@@ -18,9 +18,9 @@
 package com.intel.hibench.streambench.flink.microbench
 
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.windowing.windows.Window
 
 trait SpoutTops {
-  def processStreamData(lines:DataStream[String],env:StreamExecutionEnvironment){
-
+  def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
   }
 }

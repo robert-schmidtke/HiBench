@@ -18,8 +18,10 @@
 package com.intel.hibench.streambench.flink.microbench
 
 import com.intel.hibench.streambench.flink.entity.ParamEntity
+import com.intel.hibench.streambench.flink.util._
 
 import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.windowing.windows.Window
 
 import org.apache.log4j.Logger
 
@@ -46,31 +48,27 @@ case class MultiReducer(var max: Long, var min: Long, var sum: Long, var count: 
 class NumericCalcJob(subClassParams: ParamEntity, fieldIndex: Int, separator: String)
   extends RunBenchJobWithInit(subClassParams) {
 
-  val log = Logger.getLogger(classOf[NumericCalcJob].getSimpleName)
-
   var history_statistics = new MultiReducer()
 
-  override def processStreamData(lines: DataStream[String], ssc: StreamExecutionEnvironment) {
+  override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
     val index = fieldIndex
     val sep = separator
 
-    val numbers = lines.flatMap( line => {
-        val splits = line.trim.split(sep)
-        if (index < splits.length)
-          Iterator(splits(index).toLong)
-        else
-          Iterator.empty
-      })
+    val cur = lines.fold(new MultiReducer(), { (m: MultiReducer, line: String) => 
+      val splits = line.trim.split(sep)
+      if (index < splits.length) {
+        val num = splits(index).toLong
+        m.reduce(new MultiReducer(num, num, num, 1))
+      } else
+        m
+    })
 
-      var zero = new MultiReducer()
-      val cur = numbers.map(x => new MultiReducer(x, x, x, 1))
-        .fold(zero)((v1, v2) => v1.reduce(v2))
-      //var cur = numbers.aggregate(zero)((v, x) => v.reduceValue(x), (v1, v2) => v1.reduce(v2))
-      history_statistics.reduce(cur)
-
-      log.info("Current max: " + history_statistics.max)
-      log.info("Current min: " + history_statistics.min)
-      log.info("Current sum: " + history_statistics.sum)
-      log.info("Current total: " + history_statistics.count)
+    cur.addSink(_ => { history_statistics.reduce(_)
+      BenchLogUtil.logMsg("Current max: " + history_statistics.max)
+      BenchLogUtil.logMsg("Current min: " + history_statistics.min)
+      BenchLogUtil.logMsg("Current sum: " + history_statistics.sum)
+      BenchLogUtil.logMsg("Current total: " + history_statistics.count)
+      Unit
+    })
   }
 }

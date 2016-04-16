@@ -23,38 +23,47 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer081
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.windowing.windows.{GlobalWindow, TimeWindow}
 
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
-class RunBenchJobWithInit(params:ParamEntity) extends SpoutTops {
+import scala.util.Random
 
-  def run(){
+class RunBenchJobWithInit(params: ParamEntity) extends SpoutTops {
 
-    val env:StreamExecutionEnvironment=StreamExecutionEnvironment.getExecutionEnvironment
+  def run() {
+    if (params.testWAL) {
+      throw new UnsupportedOperationException("WAL testing not supported")
+    }
+    val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 
-    val lines = createStream(env)
-      .keyBy("")
-      .window(Time.of(params.batchInterval, TimeUnit.SECONDS))
-      .every(Time.of(params.batchInterval, TimeUnit.SECONDS))
-    processStreamData(lines, env)
+    if (!params.directMode) {
+      throw new UnsupportedOperationException("Only direct mode supported")
+    }
 
+    val lines: DataStream[String] = createDirectStream(env)
+    val parallelism = lines.getParallelism
+    val random = new Random
+    val keyedLines = lines.keyBy(_ => random.nextInt(parallelism))
+    val windowedLines = if (params.batchInterval > 0)
+      processStreamData[TimeWindow](keyedLines.timeWindow(Time.of(params.batchInterval, TimeUnit.SECONDS)), env)
+    else
+      processStreamData[GlobalWindow](keyedLines.countWindow(1), env)
+    
     env.execute(params.appName)
   }
 
-  def createStream(env:StreamExecutionEnvironment):DataStream[String] = {
-    val kafkaParams=new Properties()
+  def createDirectStream(env: StreamExecutionEnvironment): DataStream[String] = {
+    val kafkaParams = new Properties()
+    kafkaParams.setProperty("bootstrap.server", params.brokerList)
     kafkaParams.setProperty("zookeeper.connect", params.zkHost)
-    kafkaParams.setProperty("group.id",  params.consumerGroup)
-    kafkaParams.setProperty("rebalance.backoff.ms", "20000")
-    kafkaParams.setProperty("zookeeper.session.timeout.ms", "20000")
+    kafkaParams.setProperty("group.id", params.consumerGroup)
+    kafkaParams.setProperty("auto.offset.reset", "smallest")
+    kafkaParams.setProperty("socket.receive.buffer.size", "1073741824")
 
-    val kafkaInputs = (1 to params.threads).map{_ =>
-      println(s"Create kafka input, args:$kafkaParams")
-      env.addSource(new FlinkKafkaConsumer081[String](params.topic, new SimpleStringSchema(), kafkaParams))
-    }
-
-    return kafkaInputs(0).union(kafkaInputs.drop(1) : _*)
+    println(s"Create direct kafka stream, args:$kafkaParams")
+    env.addSource(new FlinkKafkaConsumer081[String](params.topic, new SimpleStringSchema(), kafkaParams))
   }
 
 }

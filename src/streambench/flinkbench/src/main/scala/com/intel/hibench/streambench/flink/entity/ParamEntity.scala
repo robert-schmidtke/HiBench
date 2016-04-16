@@ -1,7 +1,7 @@
 package com.intel.hibench.streambench.flink.entity
 
 case class ParamEntity(
-  jobManager: String,
+  master: String,
   appName: String,
   batchInterval: Int,
   zkHost: String, 
@@ -10,6 +10,10 @@ case class ParamEntity(
   threads: Int,
   recordCount: Long,
   copies: Int,
+  testWAL: Boolean,
+  path: String,
   debug: Boolean,
+  directMode: Boolean,
+  brokerList: String,
   totalParallel: Int
 )
