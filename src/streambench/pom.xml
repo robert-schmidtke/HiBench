@@ -29,6 +29,7 @@
       <module>datagen</module>
       <module>zkHelper</module>
       <module>sparkbench</module>
+      <module>flinkbench</module>
       <module>stormbench</module>
       <module>samzabench</module>
     </modules>

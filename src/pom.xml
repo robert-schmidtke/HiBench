@@ -208,5 +208,21 @@
 	    </modules>
 
         </profile>
+
+        <profile>
+            <id>flink0.10</id>
+            <properties>
+                <env>flink0.10</env>
+                <flink.version>0.10.2</flink.version>
+                <flink.bin.version>0.10</flink.bin.version>
+            </properties>
+            <activation>
+                <property><name>flink0.10</name></property>
+            </activation>
+            <modules>
+                <module>streambench</module>
+            </modules>
+        </profile>
+
     </profiles>
 </project>
