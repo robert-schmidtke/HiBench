@@ -344,6 +344,10 @@ def generate_optional_value():  # get some critical values from environment or m
         assert spark_version, "Spark version probe failed, please override `hibench.spark.version` to explicitly define this property"
         HibenchConf["hibench.spark.version"] = "spark" + spark_version[:3]
 
+    # TODO probe flink version
+    assert HibenchConf.get("hibench.flink.version", ""), "hibench.flink.version undefined, please fix it and retry"
+    HibenchConfRef["hibench.flink.version"] = "Set via hibench.flink.version"
+
     # probe hadoop example jars
     if not HibenchConf.get("hibench.hadoop.examples.jar", ""):
         if HibenchConf["hibench.hadoop.version"] == "hadoop1": # MR1
@@ -459,6 +463,37 @@ def generate_optional_value():  # get some critical values from environment or m
             except Exception as e:
                 assert 0, "Get workers from yarn web UI page failed, reason:%s\nplease set `hibench.masters.hostnames` and `hibench.slaves.hostnames` manually" % e
 
+    # probe masters, slaves hostnames
+    # determine running mode according to flink jobmanager configuration
+    if not (HibenchConf.get("hibench.masters.hostnames", "") or HibenchConf.get("hibench.slaves.hostnames", "")): # no pre-defined hostnames, let's probe
+        flink_jobmanager = HibenchConf['hibench.flink.jobmanager']
+        if flink_jobmanager.startswith("yarn"): # yarn mode
+            yarn_executable = os.path.join(os.path.dirname(HibenchConf['hibench.hadoop.executable']), "yarn")
+            cmd = "( " + yarn_executable + " node -list 2> /dev/null | grep RUNNING )"
+            try:
+                worker_hostnames = [line.split(":")[0] for line in shell(cmd).split("\n")]
+                HibenchConf['hibench.slaves.hostnames'] = " ".join(worker_hostnames)
+                HibenchConfRef['hibench.slaves.hostnames'] = "Probed by parsing results from: "+cmd
+
+                # parse yarn resource manager from hadoop conf
+                yarn_site_file = os.path.join(HibenchConf["hibench.hadoop.configure.dir"], "yarn-site.xml")
+                with open(yarn_site_file) as f:
+                    file_content = f.read()
+                    match_address=re.findall("\<property\>\s*\<name\>\s*yarn.resourcemanager.address\s*\<\/name\>\s*\<value\>([a-zA-Z\-\._0-9]+)(:\d+)?\<\/value\>", file_content)
+                    match_hostname=re.findall("\<property\>\s*\<name\>\s*yarn.resourcemanager.hostname\s*\<\/name\>\s*\<value\>([a-zA-Z\-\._0-9]+)(:\d+)?\<\/value\>", file_content)
+            if match_address:
+                        resourcemanager_hostname = match_address[0][0]
+                        HibenchConf['hibench.masters.hostnames'] = resourcemanager_hostname
+                        HibenchConfRef['hibench.masters.hostnames'] = "Parsed from "+ yarn_site_file
+                    elif match_hostname:
+            resourcemanager_hostname = match_hostname[0][0]
+                        HibenchConf['hibench.masters.hostnames'] = resourcemanager_hostname
+                        HibenchConfRef['hibench.masters.hostnames'] = "Parsed from "+ yarn_site_file
+            else:
+                        assert 0, "Unknown resourcemanager, please check `hibench.hadoop.configure.dir` and \"yarn-site.xml\" file"
+            except Exception as e:
+                assert 0, "Get workers from yarn web UI page failed, reason:%s\nplease set `hibench.masters.hostnames` and `hibench.slaves.hostnames` manually" % e
+
     # reset hostnames according to gethostbyaddr
     names = set(HibenchConf['hibench.masters.hostnames'].split() + HibenchConf['hibench.slaves.hostnames'].split())
     new_name_mapping={}
@@ -486,11 +521,15 @@ def export_config(workload_name, workload_tail):
     conf_filename= join(conf_dir, "%s.conf" % workload_name)
 
     spark_conf_dir = join(conf_dir, "sparkbench")
+    flink_conf_dir = join(conf_dir, "flinkbench")
     spark_prop_conf_filename = join(spark_conf_dir, "spark.conf")
+    flink_prop_conf_filename = join(flink_conf_dir, "flink.conf")
     samza_prop_conf_filename = join(spark_conf_dir, "samza.conf")
     sparkbench_prop_conf_filename = join(spark_conf_dir, "sparkbench.conf")
+    flinkbench_prop_conf_filename = join(flink_conf_dir, "flinkbench.conf")
 
     if not os.path.exists(spark_conf_dir):      os.makedirs(spark_conf_dir)
+    if not os.path.exists(flink_conf_dir):      os.makedirs(flink_conf_dir)
     if not os.path.exists(conf_dir):      os.makedirs(conf_dir)
 
     # generate configure for hibench
@@ -506,14 +545,16 @@ def export_config(workload_name, workload_tail):
             f.write("\n\n")
         f.write("#Source: add for internal usage\n")
         f.write("SPARKBENCH_PROPERTIES_FILES=%s\n" % sparkbench_prop_conf_filename)
+        f.write("FLINKBENCH_PROPERTIES_FILES=%s\n") % flinkbench_prop_conf_filename)
         f.write("SPARK_PROP_CONF=%s\n" % spark_prop_conf_filename)
+        f.write("FLINK_PROP_CONF=%s\n" % flink_prop_conf_filename)
         f.write("SAMZA_PROP_CONF=%s\n" % samza_prop_conf_filename)
         f.write("WORKLOAD_RESULT_FOLDER=%s\n" % join(conf_dir, ".."))
         f.write("HIBENCH_WORKLOAD_CONF=%s\n" % conf_filename)
         f.write("export HADOOP_EXECUTABLE\n")
         f.write("export HADOOP_CONF_DIR\n")
 
-    # generate properties for spark & sparkbench
+    # generate properties for spark & sparkbench & flink & flinkbench
     sources=defaultdict(list)
     for prop_name, prop_value in HibenchConf.items():
         source = HibenchConfRef.get(prop_name, 'None')
@@ -522,6 +563,14 @@ def export_config(workload_name, workload_tail):
     with open(spark_prop_conf_filename, 'w') as f:
         for source in sorted(sources.keys()):
             items = [x for x in sources[source] if x.startswith("spark.")]
+            if items:
+                f.write("# Source: %s\n" % source)
+                f.write("\n".join(sorted(items)))
+                f.write("\n\n")
+    # generate configure for flinkbench
+    with open(flinkbench_prop_conf_filename, 'w') as f:
+        for source in sorted(sources.keys()):
+            items = [x for x in sources[source] if x.startswith("flink.")]
             if items:
                 f.write("# Source: %s\n" % source)
                 f.write("\n".join(sorted(items)))
@@ -538,6 +587,14 @@ def export_config(workload_name, workload_tail):
     with open(sparkbench_prop_conf_filename, 'w') as f:
         for source in sorted(sources.keys()):
             items = [x for x in sources[source] if x.startswith("sparkbench.") or x.startswith("hibench.")]
+            if items:
+                f.write("# Source: %s\n" % source)
+                f.write("\n".join(sorted(items)))
+                f.write("\n\n")
+    # generate configure for flink
+    with open(flinkbench_prop_conf_filename, 'w') as f:
+        for source in sorted(sources.keys()):
+            items = [x for x in sources[source] if x.startswith("flinkbench.") or x.startswith("hibench.")]
             if items:
                 f.write("# Source: %s\n" % source)
                 f.write("\n".join(sorted(items)))

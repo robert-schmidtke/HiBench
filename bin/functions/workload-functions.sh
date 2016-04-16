@@ -278,6 +278,11 @@ function run-spark-job() {
     fi
 }
 
+function run-flink-job() {
+    echo "TODO"
+    exit 1
+}
+
 function run-streaming-job (){
     run-spark-job --jars ${STREAMINGBENCH_JARS} $@
 }

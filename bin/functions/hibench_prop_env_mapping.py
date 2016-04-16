@@ -21,14 +21,17 @@ HiBenchEnvPropMappingMandatory=dict(
     JAVA_BIN="java.bin",
     HADOOP_HOME="hibench.hadoop.home",
     SPARK_HOME="hibench.spark.home",
+    FLINK_HOME="hibench.flink.hone",
     HDFS_MASTER="hibench.hdfs.master",
     SPARK_MASTER="hibench.spark.master",
+    FLINK_JOBMANAGER="hibench.flink.jobmanager",
     HADOOP_VERSION="hibench.hadoop.version",       
     HADOOP_RELEASE="hibench.hadoop.release",        
     HADOOP_EXAMPLES_JAR="hibench.hadoop.examples.jar", 
     HADOOP_EXECUTABLE="hibench.hadoop.executable", 
     HADOOP_CONF_DIR="hibench.hadoop.configure.dir",
     SPARK_VERSION="hibench.spark.version",
+    FLINK_VERSION="hibench.flink.version",
     HIBENCH_HOME="hibench.home",
     HIBENCH_CONF="hibench.configure.dir", 
 
@@ -54,6 +57,7 @@ HiBenchEnvPropMappingMandatory=dict(
 
 HiBenchEnvPropMapping=dict(
     SPARK_EXAMPLES_JAR="hibench.spark.examples.jar",
+    FLINK_EXAMPLES_JAR="hibench.flink.examples.jar",
 
     HIVE_HOME="hibench.hive.home",
     HIVE_RELEASE="hibench.hive.release",
