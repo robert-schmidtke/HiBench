@@ -1,10 +1,10 @@
 #!/bin/bash
 
 #SBATCH -J hibench-terasort
-# SBATCH --exclusive
+#SBATCH --exclusive
 #SBATCH --open-mode=append
 
-source $HOME/HiBench/bin/custom/env-slurm.sh
+source /scratch/$USER/HiBench/bin/custom/env-slurm.sh
 
 #$HOME/collectl-slurm/collectl_slurm.sh start
 
@@ -27,7 +27,7 @@ srun -N$SLURM_JOB_NUM_NODES rm -rf /local/$USER/hdfs
 echo "Cleaning local directories done"
 
 echo "Starting Hadoop $(date)"
-srun --nodes=1-1 --nodelist=$HADOOP_NAMENODE $HOME/HiBench/bin/custom/start-hdfs-slurm.sh 262144 1
+srun --nodes=1-1 --nodelist=$HADOOP_NAMENODE $HIBENCH_HOME/bin/custom/start-hdfs-slurm.sh 262144 1
 echo "Starting Hadoop done $(date)"
 
 # add Hadoop classpath to Spark after Hadoop is running
@@ -38,7 +38,7 @@ echo "Starting Hadoop done $(date)"
 
 cp $FLINK_HOME/conf/flink-conf.yaml.template $FLINK_HOME/conf/flink-conf.yaml
 sed -i "/^jobmanager\.rpc\.address/c\jobmanager.rpc.address: $HADOOP_NAMENODE" $FLINK_HOME/conf/flink-conf.yaml
-sed -i "^# fs\.hdfs\.hadoopconf/c\fs.hdfs.hadoopconf: $HADOOP_CONF_DIR" $FLINK_HOME/conf/flink-conf.yaml
+sed -i "/^# fs\.hdfs\.hadoopconf/c\fs.hdfs.hadoopconf: $HADOOP_CONF_DIR" $FLINK_HOME/conf/flink-conf.yaml
 
 sleep 60s
 
@@ -64,7 +64,9 @@ hibench.yarn.driver.memory 8G
 #spark.eventLog.dir hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events
 EOL
 
+$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 $HIBENCH_HOME/workloads/terasort/prepare/prepare.sh
+$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 $HADOOP_PREFIX/bin/hadoop fs -mkdir -p hdfs://$HADOOP_NAMENODE:8020/HiBench/Terasort/Output
 $FLINK_HOME/bin/flink run \
   -m yarn-cluster \
@@ -77,6 +79,7 @@ $FLINK_HOME/bin/flink run \
   /scratch/$USER/terasort/target/scala-2.10/terasort_2.10-0.0.1.jar \
   hdfs://$HADOOP_NAMENODE:8020 /HiBench/Terasort/Input /HiBench/Terasort/Output \
   $(($NUM_HADOOP_DATANODES * 4))
+$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 
 #$HIBENCH_HOME/workloads/terasort/mapreduce/bin/run.sh
 #$HIBENCH_HOME/workloads/terasort/spark/scala/bin/run.sh
@@ -87,7 +90,7 @@ $HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/hadoo
 #$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events $HIBENCH_HOME/bin/custom/hibench-terasort.$SLURM_JOB_ID-sparkhistory
 
 echo "Stopping Hadoop $(date)"
-srun --nodes=1-1 --nodelist=$HADOOP_NAMENODE $HOME/HiBench/bin/custom/stop-hdfs-slurm.sh
+srun --nodes=1-1 --nodelist=$HADOOP_NAMENODE $HIBENCH_HOME/bin/custom/stop-hdfs-slurm.sh
 echo "Stopping Hadoop done $(date)"
 
 sleep 60s
