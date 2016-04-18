@@ -32,11 +32,11 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
 
   override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
     val cur: DataStream[(Long, Long, Long, Long)] = lines.fold[(Long, Long, Long, Long)]((Long.MinValue, Long.MaxValue, 0L, 0L), new RichFoldFunction[String, (Long, Long, Long, Long)] {
-      val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
-      val separator = { params.get("hibench.streamingbench.separator") }
-      val index = { params.getInt("hibench.streamingbench.field_index") }
-
       override def fold(m: (Long, Long, Long, Long), line: String): (Long, Long, Long, Long) = {
+        val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
+        val separator = { params.get("hibench.streamingbench.separator") }
+        val index = { params.getInt("hibench.streamingbench.field_index") }
+
         val splits = line.trim.split(separator)
         if (index < splits.length) {
           val num = splits(index).toLong
@@ -47,10 +47,10 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
     })
 
     cur.addSink(new RichSinkFunction[(Long, Long, Long, Long)] {
-      val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
-      val reportDir = { params.get("hibench.report.dir") }
-
       override def invoke(c: (Long, Long, Long, Long)) {
+        val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
+        val reportDir = { params.get("hibench.report.dir") }
+
         history_statistics = (Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4)
         BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
         BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
