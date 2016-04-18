@@ -28,35 +28,28 @@ import org.apache.flink.api.java.utils.ParameterTool;
 
 public class ConfigLoader {
 
-    public static ParameterTool loadParameters(String filename) {
-        try {
-            Map<String, String> store = new HashMap<String, String>();
-            BufferedReader br = new BufferedReader(new FileReader(filename));
-            String line = br.readLine();
-            while(line != null){
-                if ((line.length()>0) && (line.charAt(0)!='#')) {
-                    String[] words = line.split("\\s+");
-                    if (words.length == 2) {
-                        String key = words[0];
-                        String value = words[1];
-                        store.put(key, value);
-                    } else if (words.length == 1) {
-                        String key = words[0];
-                        store.put(key, "");
-                    } else {
-                        if (!line.startsWith("hibench"))
-                            System.out.println("Warning: unknown config parsed, skip:" + line);
-                    }
+    public static ParameterTool loadParameters(String filename) throws IOException {
+        Map<String, String> store = new HashMap<String, String>();
+        BufferedReader br = new BufferedReader(new FileReader(filename));
+        String line = br.readLine();
+        while (line != null) {
+            if ((line.length() > 0) && (line.charAt(0) != '#')) {
+                String[] words = line.split("\\s+");
+                if (words.length == 2) {
+                    String key = words[0];
+                    String value = words[1];
+                    store.put(key, value);
+                } else if (words.length == 1) {
+                    String key = words[0];
+                    store.put(key, "");
+                } else {
+                    if (!line.startsWith("hibench"))
+                        System.out.println("Warning: unknown config parsed, skip:" + line);
                 }
-                line = br.readLine();
             }
-            return ParameterTool.fromMap(store);
-        } catch (FileNotFoundException e) {
-            System.out.println("ERROR: Config file not found! Should not happen. Caused by:");
-        } catch (IOException e) {
-            System.out.println("ERROR: IO exception during read file. Should not happen. Caused by:");
-            e.printStackTrace();
+            line = br.readLine();
         }
+        return ParameterTool.fromMap(store);
     }
 
 }
