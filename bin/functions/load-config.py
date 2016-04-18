@@ -481,15 +481,15 @@ def generate_optional_value():  # get some critical values from environment or m
                     file_content = f.read()
                     match_address=re.findall("\<property\>\s*\<name\>\s*yarn.resourcemanager.address\s*\<\/name\>\s*\<value\>([a-zA-Z\-\._0-9]+)(:\d+)?\<\/value\>", file_content)
                     match_hostname=re.findall("\<property\>\s*\<name\>\s*yarn.resourcemanager.hostname\s*\<\/name\>\s*\<value\>([a-zA-Z\-\._0-9]+)(:\d+)?\<\/value\>", file_content)
-            if match_address:
+                    if match_address:
                         resourcemanager_hostname = match_address[0][0]
                         HibenchConf['hibench.masters.hostnames'] = resourcemanager_hostname
                         HibenchConfRef['hibench.masters.hostnames'] = "Parsed from "+ yarn_site_file
                     elif match_hostname:
-            resourcemanager_hostname = match_hostname[0][0]
+                        resourcemanager_hostname = match_hostname[0][0]
                         HibenchConf['hibench.masters.hostnames'] = resourcemanager_hostname
                         HibenchConfRef['hibench.masters.hostnames'] = "Parsed from "+ yarn_site_file
-            else:
+                    else:
                         assert 0, "Unknown resourcemanager, please check `hibench.hadoop.configure.dir` and \"yarn-site.xml\" file"
             except Exception as e:
                 assert 0, "Get workers from yarn web UI page failed, reason:%s\nplease set `hibench.masters.hostnames` and `hibench.slaves.hostnames` manually" % e
@@ -545,7 +545,7 @@ def export_config(workload_name, workload_tail):
             f.write("\n\n")
         f.write("#Source: add for internal usage\n")
         f.write("SPARKBENCH_PROPERTIES_FILES=%s\n" % sparkbench_prop_conf_filename)
-        f.write("FLINKBENCH_PROPERTIES_FILES=%s\n") % flinkbench_prop_conf_filename)
+        f.write("FLINKBENCH_PROPERTIES_FILES=%s\n" % flinkbench_prop_conf_filename)
         f.write("SPARK_PROP_CONF=%s\n" % spark_prop_conf_filename)
         f.write("FLINK_PROP_CONF=%s\n" % flink_prop_conf_filename)
         f.write("SAMZA_PROP_CONF=%s\n" % samza_prop_conf_filename)

@@ -8,6 +8,9 @@ hibench.hadoop.home		/PATH/TO/YOUR/HADOOP/ROOT
 # Spark home
 hibench.spark.home		/PATH/TO/YOUR/SPARK/ROOT
 
+# Flink home
+hibench.flink.home		/PATH/TO/YOUR/FLINK/ROOT
+
 # HDFS master, set according to hdfs-site.xml
 hibench.hdfs.master		hdfs://HOSTNAME:HDFSPORT
 
@@ -16,6 +19,11 @@ hibench.hdfs.master		hdfs://HOSTNAME:HDFSPORT
 #   YARN mode: `yarn-client`
 #   unset: fallback to `local[1]`
 hibench.spark.master		yarn-client
+
+# Flink job manager
+#   YARN mode: `yarn-client`
+#   unset: fallback to `localhost:6123`
+hibench.flink.jobmanager	yarn-cluster
 
 #======================================================
 # Not mandatory but important settings
@@ -45,6 +53,13 @@ hibench.spark.master		yarn-client
 # Note, supported values: `spark1.2` to `spark1.6`
 
 #hibench.spark.version          spark1.6
+
+# `hibench.flink.version` is used to choose which flinkbench workload
+# jar. Mostly situation it'll be auto probed. Please override if spark
+# version is not probed correctly. For flink version after 0.10, please
+# set it to flink0.10
+# Note, supported values: `flink0.10`
+hibench.flink.version		flink0.10
 
 #======================================================
 # Optional settings

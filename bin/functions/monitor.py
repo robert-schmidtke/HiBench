@@ -520,6 +520,8 @@ def parse_bench_log(benchlog_fn):
     events=["x,event"]
     _spark_stage_submit = re.compile("^(\d{2}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) INFO [a-zA-Z0-9_\.]*DAGScheduler: Submitting (Stage \d+) \((.*)\).+$") # submit spark stage
     _spark_stage_finish = re.compile("^(\d{2}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) INFO [a-zA-Z0-9_\.]*DAGScheduler: (Stage \d+) \((.*)\) finished.+$")   # spark stage finish
+    _flink_run_job = re.compile("^.*(\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2})\s+Job execution switched to status RUNNING\..*$")
+    _flink_job_complete = re.compile("^.*(\d{2}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2})\s+Job execution switched to status FINISHED\..*$")
     _hadoop_run_job = re.compile("^(\d{2}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) INFO mapred.*\.Job.*: Running job: job_([\d_]+)$") # hadoop run job
     _hadoop_map_reduce_progress = re.compile("^(\d{2}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) INFO mapred.*\.Job.*:\s+map (\d{1,2})% reduce (\d{1,2})%$") # hadoop reduce progress
     _hadoop_job_complete_mr1 = re.compile("^(\d{2}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) INFO mapred.JobClient: Job complete: job_([\d_]+)$")
@@ -544,15 +546,22 @@ def parse_bench_log(benchlog_fn):
         while True:
             line = f.readline().rstrip()
             if not line: break
-            for rule in [_spark_stage_submit, _spark_stage_finish, _hadoop_run_job, _hadoop_map_reduce_progress, _hadoop_job_complete_mr1, _hadoop_job_complete_mr2]:
+            for rule in [_spark_stage_submit, _spark_stage_finish, _flink_run_job, _flink_job_complete, _hadoop_run_job, _hadoop_map_reduce_progress, _hadoop_job_complete_mr1, _hadoop_job_complete_mr2]:
                 matched = rule.match(line)
                 if matched:
                     result = matched.groups()
-                    timestamp = datetime.strptime(result[0], r"%y/%m/%d %H:%M:%S").strftime("%s")+"000" # convert to millsec for js
+                    try:
+                        timestamp = datetime.strptime(result[0], r"%y/%m/%d %H:%M:%S").strftime("%s")+"000" # convert to millsec for js
+                    except ValueError:
+                        timestamp = datetime.strptime(result[0], r"%m/%d/%Y %H:%M:%S").strftime("%s")+"000"
                     if rule is _spark_stage_submit:
                         events.append("{t},Start {v1} ({v2})".format(t=timestamp, v1=result[1], v2=result[2]))
                     elif rule is _spark_stage_finish:
                         events.append("{t},Finish {v1} ({v2})".format(t=timestamp, v1=result[1], v2=result[2]))
+                    elif rule is _flink_run_job:
+                        events.append("{t},Start".format(t=timestamp))
+                    elif rule is _flink_job_complete:
+                        events.append("{t},Finish".format(t=timestamp))
                     elif rule is _hadoop_run_job:
                         events.append("{t},Start Job {v1}".format(t=timestamp, v1=result[1]))
                         flag={}

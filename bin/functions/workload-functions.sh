@@ -279,12 +279,60 @@ function run-spark-job() {
 }
 
 function run-flink-job() {
-    echo "TODO"
-    exit 1
+    LIB_JARS="${FLINKBENCH_JAR}"
+    while (($#)); do
+      if [ "$1" = "--jars" ]; then
+        LIB_JARS="$2"
+        shift 2
+        continue
+      fi
+      break
+    done
+
+    CLS=$1
+    shift
+
+    export_withlog FLINKBENCH_PROPERTIES_FILES
+
+    YARN_OPTS=""
+    if [[ "$FLINK_JOBMANAGER" == yarn-* ]]; then
+        export_withlog HADOOP_CONF_DIR
+
+        if [[ -n "${YARN_JOBMANAGER_MEMORY:-}" ]]; then
+            YARN_OPTS="${YARN_OPTS} --yarnjobManagerMemory ${YARN_JOBMANAGER_MEMORY}"
+       fi
+       if [[ -n "${YARN_NUM_TASKMANAGERS:-}" ]]; then
+           YARN_OPTS="${YARN_OPTS} --yarncontainer ${YARN_NUM_TASKMANAGERS}"
+       fi
+       if [[ -n "${YARN_TASKMANAGER_MEMORY:-}" ]]; then
+           YARN_OPTS="${YARN_OPTS} --yarntaskManagerMemory ${YARN_TASKMANAGER_MEMORY}"
+       fi
+       if [[ -n "${YARN_TASKMANAGER_SLOTS:-}" ]]; then
+           YARN_OPTS="${YARN_OPTS} --yarnslots ${YARN_TASKMANAGER_SLOTS}"
+       fi
+    fi
+    # TODO somehow pass FLINK_PROP_CONF to the run
+    SUBMIT_CMD="${FLINK_HOME}/bin/flink run --class ${CLS} --jobmanager ${FLINK_JOBMANAGER} ${YARN_OPTS} ${LIB_JARS} $@"
+    echo -e "${BGreen}Submit Flink job: ${Green}${SUBMIT_CMD}${Color_Off}"
+    MONITOR_PID=`start-monitor`
+    execute_withlog ${SUBMIT_CMD}
+    result=$?
+    stop-monitor ${MONITOR_PID}
+    if [ $result -ne 0 ]
+    then
+        echo -e "${BRed}ERROR${Color_Off}: Flink job ${BYellow}${CLS}${Color_Off} failed to run successfully."
+        echo -e "${BBlue}Hint${Color_Off}: You can goto ${BYellow}${WORKLOAD_RESULT_FOLDER}/bench.log${Color_Off} to check for detailed log.\nOpening log tail for you:\n"
+        tail ${WORKLOAD_RESULT_FOLDER}/bench.log
+        exit $result
+    fi
 }
 
 function run-streaming-job (){
     run-spark-job --jars ${STREAMINGBENCH_JARS} $@
+}
+
+function run-flink-streaming-job (){
+    run-flink-job --jars ${STREAMBENCH_FLINK_JAR} $@
 }
 
 function run-storm-job(){

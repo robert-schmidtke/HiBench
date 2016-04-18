@@ -46,18 +46,18 @@ case class MultiReducer(var max: Long, var min: Long, var sum: Long, var count: 
 }
 
 class NumericCalcJob(subClassParams: ParamEntity, fieldIndex: Int, separator: String)
-  extends RunBenchJobWithInit(subClassParams) {
+  extends RunBenchJobWithInit(subClassParams) with Serializable {
 
-  var history_statistics = new MultiReducer()
+  val history_statistics = new MultiReducer()
 
   override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
-    val index = fieldIndex
-    val sep = separator
+    // val index = fieldIndex
+    // val sep = separator
 
     val cur = lines.fold(new MultiReducer(), { (m: MultiReducer, line: String) => 
-      val splits = line.trim.split(sep)
-      if (index < splits.length) {
-        val num = splits(index).toLong
+      val splits = line.trim.split("\\s+")
+      if (1 < splits.length) {
+        val num = splits(1).toLong
         m.reduce(new MultiReducer(num, num, num, 1))
       } else
         m

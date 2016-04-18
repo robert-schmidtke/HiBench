@@ -20,6 +20,7 @@ package com.intel.hibench.streambench;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Properties;
 
 import com.intel.hibench.streambench.utils.ConfigLoader;
@@ -87,8 +88,12 @@ public class NewKafkaConnector {
 
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < NumericData.length; i++) {
-      int val = NumericData[i];
-      sb.append(val + " ");
+      if (NumericData[i] != null) {
+        int val = NumericData[i];
+        sb.append(val + " ");
+      } else {
+        break;
+      }
     }
     String result = sb.toString();
     return String.format("%s%n", result.substring(0, result.length() - 1));

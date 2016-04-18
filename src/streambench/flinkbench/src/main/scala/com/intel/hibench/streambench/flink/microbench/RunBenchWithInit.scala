@@ -44,8 +44,7 @@ class RunBenchJobWithInit(params: ParamEntity) extends SpoutTops {
 
     val lines: DataStream[String] = createDirectStream(env)
     val parallelism = lines.getParallelism
-    val random = new Random
-    val keyedLines = lines.keyBy(_ => random.nextInt(parallelism))
+    val keyedLines = lines.keyBy(_ => (System.currentTimeMillis % parallelism).toInt)
     val windowedLines = if (params.batchInterval > 0)
       processStreamData[TimeWindow](keyedLines.timeWindow(Time.of(params.batchInterval, TimeUnit.SECONDS)), env)
     else
@@ -56,7 +55,7 @@ class RunBenchJobWithInit(params: ParamEntity) extends SpoutTops {
 
   def createDirectStream(env: StreamExecutionEnvironment): DataStream[String] = {
     val kafkaParams = new Properties()
-    kafkaParams.setProperty("bootstrap.server", params.brokerList)
+    kafkaParams.setProperty("bootstrap.servers", params.brokerList)
     kafkaParams.setProperty("zookeeper.connect", params.zkHost)
     kafkaParams.setProperty("group.id", params.consumerGroup)
     kafkaParams.setProperty("auto.offset.reset", "smallest")

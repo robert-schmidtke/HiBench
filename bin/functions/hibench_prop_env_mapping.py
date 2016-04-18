@@ -21,7 +21,7 @@ HiBenchEnvPropMappingMandatory=dict(
     JAVA_BIN="java.bin",
     HADOOP_HOME="hibench.hadoop.home",
     SPARK_HOME="hibench.spark.home",
-    FLINK_HOME="hibench.flink.hone",
+    FLINK_HOME="hibench.flink.home",
     HDFS_MASTER="hibench.hdfs.master",
     SPARK_MASTER="hibench.spark.master",
     FLINK_JOBMANAGER="hibench.flink.jobmanager",
@@ -38,6 +38,7 @@ HiBenchEnvPropMappingMandatory=dict(
     DEPENDENCY_DIR="hibench.dependency.dir",
     REPORT_COLUMN_FORMATS="hibench.report.formats",
     SPARKBENCH_JAR="hibench.sparkbench.jar",
+    FLINKBENCH_JAR="hibench.flinkbench.jar",
     HIBENCH_PYTHON_PATH="hibench.sparkbench.python.dir",
     NUM_MAPS="hibench.default.map.parallelism",
     NUM_REDS="hibench.default.shuffle.parallelism",
@@ -70,10 +71,16 @@ HiBenchEnvPropMapping=dict(
     NUTCH_DIR="hibench.nutch.nutchindexing.dir",
     HIBENCH_REPORT="hibench.report.dir", # set in default
     HIBENCH_REPORT_NAME="hibench.report.name", # set in default
+    # Spark on YARN
     YARN_NUM_EXECUTORS="hibench.yarn.executor.num",
     YARN_EXECUTOR_CORES="hibench.yarn.executor.cores",
     YARN_EXECUTOR_MEMORY="hibench.yarn.executor.memory",
     YARN_DRIVER_MEMORY="hibench.yarn.driver.memory",
+    # Flink on YARN
+    YARN_NUM_TASKMANAGERS="hibench.yarn.taskmanager.num",
+    YARN_TASKMANAGER_SLOTS="hibench.yarn.taskmanager.slots",
+    YARN_TASKMANAGER_MEMORY="hibench.yarn.taskmanager.memory",
+    YARN_JOBMANAGER_MEMORY="hibench.yarn.jobmanager.memory",
     DATA_HDFS="hibench.hdfs.data.dir",
     # For Sleep workload
     MAP_SLEEP_TIME="hibench.sleep.mapper.seconds",
@@ -143,6 +150,7 @@ HiBenchEnvPropMapping=dict(
     STREAMBENCH_STORM_JAR="hibench.streamingbench.stormbench.jar",
     STORM_BIN_HOME="hibench.streamingbench.storm.bin",
     STREAMING_BENCHNAME="hibench.streamingbench.benchname",
+    STREAMBENCH_FLINK_JAR="hibench.streamingbench.flinkbench.jar",
 
     # samza
     STREAMING_SAMZA_WORDCOUNT_INTERNAL_TOPIC="samza_internal.wordcount.kafka.input.name",
