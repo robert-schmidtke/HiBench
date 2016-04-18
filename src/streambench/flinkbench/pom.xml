@@ -309,9 +309,9 @@
 
   <profiles>
     <profile>
-      <id>build-flink-jar</id>
+      <id>flink0.10</id>
       <activation>
-        <activeByDefault>false</activeByDefault>
+        <property><name>flink0.10</name></property>
       </activation>
       <dependencies>
         <dependency>
