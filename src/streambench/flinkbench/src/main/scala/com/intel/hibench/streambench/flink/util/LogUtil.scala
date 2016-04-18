@@ -22,16 +22,20 @@ import com.intel.hibench.streambench.flink.RunBench
 import java.io.File
 import java.io.PrintWriter
 
+import org.slf4j.{Logger, LoggerFactory}
+
 object BenchLogUtil extends Serializable {
+  val LOG = LoggerFactory.getLogger(getClass)
+
   def logMsg(msg: String, reportDir: String) {
     val out = new PrintWriter(new File(reportDir + "/streamingbench/flink/streambenchlog.txt"))
-    out.println(msg)
+    out.append(msg)
     out.close()
-    System.out.println(msg)
+    LOG.info(msg)
   }
   
   def handleError(msg: String){
-    System.err.println(msg)
+    LOG.error(msg)
     System.exit(1)
   }
 }
