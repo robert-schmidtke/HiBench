@@ -22,8 +22,6 @@ import com.intel.hibench.streambench.flink.util._
 import com.intel.hibench.streambench.flink.microbench._
 
 object RunBench {
-  var reportDir = ""
-
   def main(args: Array[String]) {
     this.run(args)
   }
@@ -33,28 +31,10 @@ object RunBench {
       BenchLogUtil.handleError("Usage: RunBench <ConfigFile>")
     }
 
-    val conf = new ConfigLoader(args(0))
+    val params = ConfigLoader.loadParameters(args(0))
+    val benchName = params.get("hibench.streamingbench.benchname")
 
-    val benchName = conf.getProperty("hibench.streamingbench.benchname")
-    val topic = conf.getProperty("hibench.streamingbench.topic_name")
-    val jobManager = conf.getProperty("hibench.flink.jobmanager")
-    val batchInterval = conf.getProperty("hibench.streamingbench.batch_interval").toInt
-    val zkHost = conf.getProperty("hibench.streamingbench.zookeeper.host")
-    val consumerGroup = conf.getProperty("hibench.streamingbench.consumer_group")
-    val kafkaThreads = conf.getProperty("hibench.streamingbench.receiver_nodes").toInt
-    val recordCount = conf.getProperty("hibench.streamingbench.record_count").toLong
-    val copies = conf.getProperty("hibench.streamingbench.copies").toInt
-    val testWAL = conf.getProperty("hibench.streamingbench.testWAL").toBoolean
-    val path = if (testWAL) conf.getProperty("hibench.streamingbench.checkpoint_path") else ""
-    val debug = conf.getProperty("hibench.streamingbench.debug").toBoolean
-    val directMode = conf.getProperty("hibench.streamingbench.direct_mode").toBoolean
-    val brokerList = if (directMode) conf.getProperty("hibench.streamingbench.brokerList") else ""
-    val totalParallel = conf.getProperty("hibench.yarn.executor.num").toInt * conf.getProperty("hibench.yarn.executor.cores").toInt
-
-    this.reportDir = conf.getProperty("hibench.report.dir")
-
-    val param = ParamEntity(jobManager, benchName, batchInterval, zkHost, consumerGroup, topic, kafkaThreads, recordCount, copies, testWAL, path, debug, directMode, brokerList, totalParallel)
-    println(s"params:$param")
+    println(s"params:$params")
     benchName match {
       /* case "project" =>
         val fieldIndex = conf.getProperty("hibench.streamingbench.field_index").toInt
@@ -66,9 +46,7 @@ object RunBench {
         val SampleTest = new SampleStreamJob(param, prob)
         SampleTest.run() */
       case "statistics" =>
-        val fieldIndex = conf.getProperty("hibench.streamingbench.field_index").toInt
-        val separator = conf.getProperty("hibench.streamingbench.separator")
-        val numericCalc = new NumericCalcJob(param, fieldIndex, separator)
+        val numericCalc = new NumericCalcJob(params)
         numericCalc.run()
       /* case "wordcount" =>
         val separator = conf.getProperty("hibench.streamingbench.separator")
@@ -84,7 +62,7 @@ object RunBench {
         val distinct = new DistinctCountJob(param, fieldIndex, separator)
         distinct.run() */
       case _ =>
-        val emptyTest = new IdentityJob(param)
+        val emptyTest = new IdentityJob(params)
         emptyTest.run()
     }
   }

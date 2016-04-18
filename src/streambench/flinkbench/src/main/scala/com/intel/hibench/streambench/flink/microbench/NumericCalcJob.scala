@@ -20,55 +20,44 @@ package com.intel.hibench.streambench.flink.microbench
 import com.intel.hibench.streambench.flink.entity.ParamEntity
 import com.intel.hibench.streambench.flink.util._
 
+import org.apache.flink.api.common.functions.RichFoldFunction
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.utils.ParameterTool
+import org.apache.flink.streaming.api.functions.sink.RichSinkFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.windows.Window
 
-import org.apache.log4j.Logger
-
-case class MultiReducer(var max: Long, var min: Long, var sum: Long, var count: Long) extends Serializable {
-  def this() = this(0, Int.MaxValue, 0, 0)
-
-  def reduceValue(value: Long): MultiReducer = {
-    this.max = Math.max(this.max, value)
-    this.min = Math.min(this.min, value)
-    this.sum += value
-    this.count += 1
-    this
-  }
-
-  def reduce(that: MultiReducer): MultiReducer = {
-    this.max = Math.max(this.max, that.max)
-    this.min = Math.min(this.min, that.min)
-    this.sum += that.sum
-    this.count += that.count
-    this
-  }
-}
-
-class NumericCalcJob(subClassParams: ParamEntity, fieldIndex: Int, separator: String)
-  extends RunBenchJobWithInit(subClassParams) with Serializable {
-
-  val history_statistics = new MultiReducer()
+class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(subClassParams) {
+  var history_statistics = (Long.MinValue, Long.MaxValue, 0L, 0L)
 
   override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
-    // val index = fieldIndex
-    // val sep = separator
+    val cur: DataStream[(Long, Long, Long, Long)] = lines.fold[(Long, Long, Long, Long)]((Long.MinValue, Long.MaxValue, 0L, 0L), new RichFoldFunction[String, (Long, Long, Long, Long)] {
+      val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
+      val separator = { params.get("hibench.streamingbench.separator") }
+      val index = { params.getInt("hibench.streamingbench.field_index") }
 
-    val cur = lines.fold(new MultiReducer(), { (m: MultiReducer, line: String) => 
-      val splits = line.trim.split("\\s+")
-      if (1 < splits.length) {
-        val num = splits(1).toLong
-        m.reduce(new MultiReducer(num, num, num, 1))
-      } else
-        m
+      override def fold(m: (Long, Long, Long, Long), line: String): (Long, Long, Long, Long) = {
+        val splits = line.trim.split(separator)
+        if (index < splits.length) {
+          val num = splits(index).toLong
+          (Math.max(m._1, num), Math.min(m._2, num), m._3 + num, m._4 + 1)
+        } else
+          m
+      }
     })
 
-    cur.addSink(_ => { history_statistics.reduce(_)
-      BenchLogUtil.logMsg("Current max: " + history_statistics.max)
-      BenchLogUtil.logMsg("Current min: " + history_statistics.min)
-      BenchLogUtil.logMsg("Current sum: " + history_statistics.sum)
-      BenchLogUtil.logMsg("Current total: " + history_statistics.count)
-      Unit
+    cur.addSink(new RichSinkFunction[(Long, Long, Long, Long)] {
+      val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
+      val reportDir = { params.get("hibench.report.dir") }
+
+      override def invoke(c: (Long, Long, Long, Long)) {
+        history_statistics = (Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4)
+        BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
+        BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
+        BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
+        BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
+        Unit
+      }
     })
   }
 }

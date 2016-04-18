@@ -24,15 +24,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ConfigLoader {
-    private String ConfigFileName = null;
-    private Map store;
+import org.apache.flink.api.java.utils.ParameterTool;
 
-    public ConfigLoader(String filename){
-        ConfigFileName = filename;
-        store = new HashMap();
-        // Load and parse config
+public class ConfigLoader {
+
+    public static ParameterTool loadParameters(String filename) {
         try {
+            Map<String, String> store = new HashMap<String, String>();
             BufferedReader br = new BufferedReader(new FileReader(filename));
             String line = br.readLine();
             while(line != null){
@@ -52,6 +50,7 @@ public class ConfigLoader {
                 }
                 line = br.readLine();
             }
+            return ParameterTool.fromMap(store);
         } catch (FileNotFoundException e) {
             System.out.println("ERROR: Config file not found! Should not happen. Caused by:");
         } catch (IOException e) {
@@ -60,12 +59,4 @@ public class ConfigLoader {
         }
     }
 
-    public String getProperty(String key){
-        if (store.containsKey(key))
-            return (String) store.get(key);
-        else {
-            System.out.println("ERROR: Unknown config key:" + key);
-            return null;
-        }
-    }
 }

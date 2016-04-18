@@ -19,10 +19,11 @@ package com.intel.hibench.streambench.flink.microbench
 
 import com.intel.hibench.streambench.flink.entity.ParamEntity
 
+import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.windows.Window
 
-class IdentityJob(subClassParams: ParamEntity) extends RunBenchJobWithInit(subClassParams) {
+class IdentityJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(subClassParams) {
 
   override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
     lines.fold((), (r: Unit, v: String) => ()).addSink(_ => Unit)

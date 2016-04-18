@@ -19,13 +19,14 @@ package com.intel.hibench.streambench.flink.util
 
 import com.intel.hibench.streambench.flink.RunBench
 
-object BenchLogUtil {
-  val file = new java.io.File(RunBench.reportDir + "/streamingbench/flink/streambenchlog.txt")
-  val out = new java.io.PrintWriter(file)
-  
-  def logMsg(msg: String) {
+import java.io.File
+import java.io.PrintWriter
+
+object BenchLogUtil extends Serializable {
+  def logMsg(msg: String, reportDir: String) {
+    val out = new PrintWriter(new File(reportDir + "/streamingbench/flink/streambenchlog.txt"))
     out.println(msg)
-    out.flush()
+    out.close()
     System.out.println(msg)
   }
   
