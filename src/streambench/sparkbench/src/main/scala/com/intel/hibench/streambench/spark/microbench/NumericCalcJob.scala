@@ -24,7 +24,7 @@ import org.apache.spark.streaming.StreamingContext
 import com.intel.hibench.streambench.spark.util.BenchLogUtil
 
 case class MultiReducer(var max: Long, var min: Long, var sum: Long, var count: Long) extends Serializable {
-  def this() = this(0, Int.MaxValue, 0, 0)
+  def this() = this(Long.MinValue, Long.MaxValue, 0L, 0L)
 
   def reduceValue(value: Long): MultiReducer = {
     this.max = Math.max(this.max, value)
@@ -62,9 +62,10 @@ class NumericCalcJob(subClassParams: ParamEntity, fieldIndex: Int, separator: St
       })
 
       var zero = new MultiReducer()
-      val currentTime = System.currentTimeMillis
-      val cur = numbers.map(x => new MultiReducer(currentTime, currentTime - subClassParams.batchInterval * 1000, x, 1))
-        .fold(zero)((v1, v2) => v1.reduce(v2))
+      val cur = numbers.map(x => {
+        val currentTime = System.currentTimeMillis
+        new MultiReducer(currentTime, currentTime, x, 1L)
+      }).fold(zero)((v1, v2) => v1.reduce(v2))
       //var cur = numbers.aggregate(zero)((v, x) => v.reduceValue(x), (v1, v2) => v1.reduce(v2))
       history_statistics.reduce(cur)
 
@@ -72,6 +73,7 @@ class NumericCalcJob(subClassParams: ParamEntity, fieldIndex: Int, separator: St
   }
 
   override def postTerminationHook() = {
+    history_statistics.min = history_statistics.min - 1000 * subClassParams.batchInterval
     BenchLogUtil.logMsg("Latest time: " + history_statistics.max)
     BenchLogUtil.logMsg("Earliest time: " + history_statistics.min)
     BenchLogUtil.logMsg("Value sum: " + history_statistics.sum)
