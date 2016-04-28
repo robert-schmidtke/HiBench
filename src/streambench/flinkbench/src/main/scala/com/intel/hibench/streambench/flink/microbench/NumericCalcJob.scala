@@ -31,25 +31,45 @@ import org.apache.flink.streaming.api.windowing.windows.Window
 
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable.HashMap
+
 class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(subClassParams) {
   override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
     val cur: DataStream[(Long, Long, Long, Long)] = lines.fold[(Long, Long, Long, Long)]((Long.MinValue, Long.MaxValue, 0L, 0L), new RichFoldFunction[String, (Long, Long, Long, Long)] {
       var separator = "\\s+"
       var index = 1
+      val latencies = new HashMap[String, (Long, Long)]
+      var reportDir = "./"
 
       override def open(configuration: Configuration) = {
         val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
         separator = params.get("hibench.streamingbench.separator", separator)
         index = params.getInt("hibench.streamingbench.field_index", index)
+        reportDir = params.get("hibench.report.dir", reportDir)
       }
 
       override def fold(m: (Long, Long, Long, Long), line: String): (Long, Long, Long, Long) = {
-        val splits = line.trim.split(separator)
-        if (index < splits.length) {
-          val num = splits(index).toLong
-          (Math.max(m._1, num), Math.min(m._2, num), m._3 + num, m._4 + 1)
-        } else
+        if (line.contains("+")) {
+          // hostname+timestamp
+          val splits = line.split("\\+")
+          // (total time difference, count)
+          val latency = latencies.get(splits(0)).getOrElse((0L, 0L))
+          latencies.put(splits(0), (latency._1 + (System.currentTimeMillis - splits(1).toLong), latency._2 + 1))
           m
+        } else {
+          val splits = line.trim.split(separator)
+          if (index < splits.length) {
+            val num = splits(index).toLong
+            (Math.max(m._1, num), Math.min(m._2, num), m._3 + num, m._4 + 1)
+          } else
+            m
+        }
+      }
+
+      override def close() = {
+        latencies foreach {
+          case (k, (v1, v2)) => BenchLogUtil.logMsg(k + " has " + v1 + " latency over " + v2 + " counts", reportDir)
+        }
       }
     })
 

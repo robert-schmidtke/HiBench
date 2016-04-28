@@ -18,6 +18,7 @@
 package com.intel.hibench.streambench.flink.microbench
 
 import org.apache.flink.api.java.utils.ParameterTool
+import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer081
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
@@ -64,6 +65,25 @@ class RunBenchJobWithInit(params: ParameterTool) extends SpoutTops {
 
     println(s"Create direct kafka stream, args:$kafkaParams")
     env.addSource(new FlinkKafkaConsumer081[String](params.get("hibench.streamingbench.topic_name"), new SimpleStringSchema(), kafkaParams))
+    .union(env.addSource(new SourceFunction[String] {
+      var isRunning = true
+
+      override def run(ctx: SourceFunction.SourceContext[String]) = {
+        val hostname = System.getenv().get("HOSTNAME")
+        while (isRunning) {
+          ctx.collect(hostname + "+" + System.currentTimeMillis)
+          try {
+            Thread.sleep(1000)
+          } catch {
+            case _: Throwable => isRunning = false
+          }
+        }
+      }
+
+      override def cancel() = {
+        isRunning = false
+      }
+    }))
   }
 
 }
