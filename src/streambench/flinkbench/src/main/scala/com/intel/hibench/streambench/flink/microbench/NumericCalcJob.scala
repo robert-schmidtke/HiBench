@@ -23,6 +23,7 @@ import com.intel.hibench.streambench.flink.util._
 import org.apache.flink.api.common.functions.RichFoldFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.utils.ParameterTool
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.windows.Window
@@ -34,11 +35,16 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
 
   override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
     val cur: DataStream[(Long, Long, Long, Long)] = lines.fold[(Long, Long, Long, Long)]((Long.MinValue, Long.MaxValue, 0L, 0L), new RichFoldFunction[String, (Long, Long, Long, Long)] {
-      override def fold(m: (Long, Long, Long, Long), line: String): (Long, Long, Long, Long) = {
-        val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
-        val separator = { params.get("hibench.streamingbench.separator") }
-        val index = { params.getInt("hibench.streamingbench.field_index") }
+      var separator = "\\s+"
+      var index = 1
 
+      override def open(configuration: Configuration) = {
+        val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
+        separator = params.get("hibench.streamingbench.separator", separator)
+        index = params.getInt("hibench.streamingbench.field_index", index)
+      }
+
+      override def fold(m: (Long, Long, Long, Long), line: String): (Long, Long, Long, Long) = {
         val splits = line.trim.split(separator)
         if (index < splits.length) {
           val num = splits(index).toLong
@@ -49,21 +55,19 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
     })
 
     cur.addSink(new RichSinkFunction[(Long, Long, Long, Long)] {
-      val LOG = LoggerFactory.getLogger(getClass)
+      var reportDir = "./"
+
+      override def open(configuration: Configuration) = {
+        val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
+        reportDir = params.get("hibench.report.dir", reportDir)
+      }
 
       override def invoke(c: (Long, Long, Long, Long)) {
-        // val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
-        // val reportDir = { params.get("hibench.report.dir") }
-
         history_statistics = (Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4)
-        // BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
-        LOG.info("Current max: " + history_statistics._1)
-        // BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
-        LOG.info("Current min: " + history_statistics._2)
-        // BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
-        LOG.info("Current sum: " + history_statistics._3)
-        // BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
-        LOG.info("Current total: " + history_statistics._4)
+        BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
+        BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
+        BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
+        BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
         Unit
       }
     })
