@@ -82,25 +82,21 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
       override def open(configuration: Configuration) = {
         val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
         reportDir = params.get("hibench.report.dir", reportDir)
-        startTime = System.currentTimeMillis
       }
 
       override def invoke(c: (Long, Long, Long, Long)) {
+        startTime = Math.min(startTime, System.currentTimeMillis)
         history_statistics = (Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4)
-//        BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
-//        BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
-//        BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
-//        BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
+        endTime = Math.max(endTime, System.currentTimeMillis)
         Unit
       }
 
       override def close() = {
-        endTime = System.currentTimeMillis
         BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
         BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
         BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
         BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
-        BenchLogUtil.logMsg("Duration: " + (endTime - startTime), reportDir)
+        BenchLogUtil.logMsg("Duration: " + (endTime - startTime) + "ms", reportDir)
       }
     }).setParallelism(1)
   }
