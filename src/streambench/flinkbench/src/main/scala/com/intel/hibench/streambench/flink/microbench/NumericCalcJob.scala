@@ -68,7 +68,7 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
 
       override def close() = {
         latencies foreach {
-          case (k, (v1, v2)) => BenchLogUtil.logMsg(k + " has " + v1 + " latency over " + v2 + " counts", reportDir)
+          case (k, (v1, v2)) => BenchLogUtil.logMsg(k + " has " + v1 + "ms latency over " + v2 + " counts", reportDir)
         }
       }
     })
