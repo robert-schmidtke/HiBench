@@ -39,12 +39,14 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
       var separator = "\\s+"
       var index = 1
       var reportDir = "./"
+      var batchInterval = 0
 
       override def open(configuration: Configuration) = {
         val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
         separator = params.get("hibench.streamingbench.separator", separator)
         index = params.getInt("hibench.streamingbench.field_index", index)
         reportDir = params.get("hibench.report.dir", reportDir)
+        batchInterval = params.getInt("hibench.streamingbench.batch_interval", batchInterval)
       }
 
       override def fold(m: (Long, Long, Long, Long, Long, Long), line: String): (Long, Long, Long, Long, Long, Long) = {
@@ -57,7 +59,7 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
           val splits = line.trim.split(separator)
           if (index < splits.length) {
             val num = splits(index).toLong
-            (Math.max(m._1, currentTime), Math.min(m._2, currentTime), m._3 + num, m._4 + 1, m._5, m._6)
+            (Math.max(m._1, currentTime), Math.min(m._2, currentTime - batchInterval * 1000), m._3 + num, m._4 + 1, m._5, m._6)
           } else
             m
         }
