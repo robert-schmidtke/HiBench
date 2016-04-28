@@ -27,10 +27,15 @@ import org.slf4j.LoggerFactory
 object BenchLogUtil extends Serializable {
   val LOG = LoggerFactory.getLogger(getClass)
 
+  var file: File = null
+  var out: PrintWriter = null
+
   def logMsg(msg: String, reportDir: String) {
-    val out = new PrintWriter(new File(reportDir + "/streamingbench/flink/streambenchlog.txt"))
-    out.append(msg)
-    out.close()
+    // there must be a more Scala way to do this ...
+    file = if (file == null) new File(reportDir + "/streamingbench/flink/streambenchlog.txt") else file
+    out = if (out == null) new PrintWriter(file) else out
+    out.println(msg)
+    out.flush()
     LOG.info(msg)
   }
   
