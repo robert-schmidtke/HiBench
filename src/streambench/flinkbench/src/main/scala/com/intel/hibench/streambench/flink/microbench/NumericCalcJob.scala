@@ -35,10 +35,9 @@ import scala.collection.mutable.HashMap
 
 class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(subClassParams) {
   override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
-    val cur: DataStream[(Long, Long, Long, Long)] = lines.fold[(Long, Long, Long, Long)]((Long.MinValue, Long.MaxValue, 0L, 0L), new RichFoldFunction[String, (Long, Long, Long, Long)] {
+    val cur: DataStream[(Long, Long, Long, Long, Long, Long)] = lines.fold[(Long, Long, Long, Long, Long, Long)]((Long.MinValue, Long.MaxValue, 0L, 0L, 0L, 0L), new RichFoldFunction[String, (Long, Long, Long, Long, Long, Long)] {
       var separator = "\\s+"
       var index = 1
-      val latencies = new HashMap[String, (Long, Long)]
       var reportDir = "./"
 
       override def open(configuration: Configuration) = {
@@ -48,46 +47,44 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
         reportDir = params.get("hibench.report.dir", reportDir)
       }
 
-      override def fold(m: (Long, Long, Long, Long), line: String): (Long, Long, Long, Long) = {
+      override def fold(m: (Long, Long, Long, Long, Long, Long), line: String): (Long, Long, Long, Long, Long, Long) = {
         if (line.contains("+")) {
           // hostname+timestamp
           val splits = line.split("\\+")
-          // (total time difference, count)
-          val latency = latencies.get(splits(0)).getOrElse((0L, 0L))
-          latencies.put(splits(0), (latency._1 + (System.currentTimeMillis - splits(1).toLong), latency._2 + 1))
-          m
+          (m._1, m._2, m._3, m._4, m._5 + (System.currentTimeMillis - splits(1).toLong), m._6 + 1)
         } else {
           val splits = line.trim.split(separator)
           if (index < splits.length) {
             val num = splits(index).toLong
-            (Math.max(m._1, num), Math.min(m._2, num), m._3 + num, m._4 + 1)
+            (Math.max(m._1, num), Math.min(m._2, num), m._3 + num, m._4 + 1, m._5, m._6)
           } else
             m
         }
       }
-
-      override def close() = {
-        latencies foreach {
-          case (k, (v1, v2)) => BenchLogUtil.logMsg(k + " has " + v1 + "ms latency over " + v2 + " counts", reportDir)
-        }
-      }
     })
 
-    cur.addSink(new RichSinkFunction[(Long, Long, Long, Long)] {
+    cur.addSink(new RichSinkFunction[(Long, Long, Long, Long, Long, Long)] {
       var reportDir = "./"
-      var history_statistics = (Long.MinValue, Long.MaxValue, 0L, 0L)
+      var recordCount = 0L
+      var history_statistics = (Long.MinValue, Long.MaxValue, 0L, 0L, 0L, 0L)
       var startTime = Long.MaxValue
       var endTime = Long.MinValue
 
       override def open(configuration: Configuration) = {
         val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
         reportDir = params.get("hibench.report.dir", reportDir)
+        recordCount = params.getLong("hibench.streamingbench.record_count", recordCount)
       }
 
-      override def invoke(c: (Long, Long, Long, Long)) {
-        startTime = Math.min(startTime, System.currentTimeMillis)
-        history_statistics = (Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4)
-        endTime = Math.max(endTime, System.currentTimeMillis)
+      override def invoke(c: (Long, Long, Long, Long, Long, Long)) {
+        // only count if we're receiving relevant records
+        if (c._4 > 0 && history_statistics._4 <= recordCount) {
+          startTime = Math.min(startTime, System.currentTimeMillis)
+          history_statistics = (
+            Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4,
+            history_statistics._5 + c._5, history_statistics._6 + c._6)
+          endTime = Math.max(endTime, System.currentTimeMillis)
+        }
         Unit
       }
 
@@ -97,6 +94,7 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
         BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
         BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
         BenchLogUtil.logMsg("Duration: " + (endTime - startTime) + "ms", reportDir)
+        BenchLogUtil.logMsg("Total latency of " + history_statistics._5 + "ms over " + history_statistics._6 + " counts", reportDir)
       }
     }).setParallelism(1)
   }
