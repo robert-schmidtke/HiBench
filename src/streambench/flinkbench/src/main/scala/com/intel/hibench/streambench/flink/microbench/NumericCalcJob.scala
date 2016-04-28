@@ -48,15 +48,16 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
       }
 
       override def fold(m: (Long, Long, Long, Long, Long, Long), line: String): (Long, Long, Long, Long, Long, Long) = {
+        val currentTime = System.currentTimeMillis
         if (line.contains("+")) {
           // hostname+timestamp
           val splits = line.split("\\+")
-          (m._1, m._2, m._3, m._4, m._5 + (System.currentTimeMillis - splits(1).toLong), m._6 + 1)
+          (m._1, m._2, m._3, m._4, m._5 + (currentTime - splits(1).toLong), m._6 + 1)
         } else {
           val splits = line.trim.split(separator)
           if (index < splits.length) {
             val num = splits(index).toLong
-            (Math.max(m._1, num), Math.min(m._2, num), m._3 + num, m._4 + 1, m._5, m._6)
+            (Math.max(m._1, currentTime), Math.min(m._2, currentTime), m._3 + num, m._4 + 1, m._5, m._6)
           } else
             m
         }
@@ -67,8 +68,6 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
       var reportDir = "./"
       var recordCount = 0L
       var history_statistics = (Long.MinValue, Long.MaxValue, 0L, 0L, 0L, 0L)
-      var startTime = Long.MaxValue
-      var endTime = Long.MinValue
 
       override def open(configuration: Configuration) = {
         val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
@@ -79,21 +78,19 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
       override def invoke(c: (Long, Long, Long, Long, Long, Long)) {
         // only count if we're receiving relevant records
         if (c._4 > 0 && history_statistics._4 <= recordCount) {
-          startTime = Math.min(startTime, System.currentTimeMillis)
           history_statistics = (
             Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4,
             history_statistics._5 + c._5, history_statistics._6 + c._6)
-          endTime = Math.max(endTime, System.currentTimeMillis)
         }
         Unit
       }
 
       override def close() = {
-        BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
-        BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
-        BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
-        BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
-        BenchLogUtil.logMsg("Duration: " + (endTime - startTime) + "ms", reportDir)
+        BenchLogUtil.logMsg("Latest time: " + history_statistics._1, reportDir)
+        BenchLogUtil.logMsg("Earliest time: " + history_statistics._2, reportDir)
+        BenchLogUtil.logMsg("Value sum: " + history_statistics._3, reportDir)
+        BenchLogUtil.logMsg("Value count: " + history_statistics._4, reportDir)
+        BenchLogUtil.logMsg("Duration: " + (history_statistics._1 - history_statistics._2) + "ms", reportDir)
         BenchLogUtil.logMsg("Total latency of " + history_statistics._5 + "ms over " + history_statistics._6 + " counts", reportDir)
       }
     }).setParallelism(1)
