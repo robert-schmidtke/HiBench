@@ -21,7 +21,8 @@ workload_folder=`cd "$workload_folder"; pwd`
 workload_root=${workload_folder}/..
 . "${workload_root}/../../bin/functions/load-bench-config.sh"
 
-if [ -z $NO_DATA1 ]; then
+NO_DATA1=${NO_DATA1:-""}
+if [ -z "$NO_DATA1" ]; then
   # generate seed data1 by hive
   enter_bench HadoopPrepareDatafile1 ${workload_root} ${workload_folder}
   show_bannar start
@@ -46,7 +47,8 @@ if [ -z $NO_DATA1 ]; then
   leave_bench
 fi
 
-if [ -z $NO_DATA2 ]; then
+NO_DATA2=${NO_DATA2:-""}
+if [ -z "$NO_DATA2" ]; then
   # generate seed data2 by kmeans
   enter_bench HadoopPrepareDatafile2 ${workload_root} ${workload_folder}
   show_bannar start
