@@ -27,6 +27,8 @@ import org.apache.flink.streaming.api.functions.sink.RichSinkFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.windows.Window
 
+import org.slf4j.LoggerFactory
+
 class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(subClassParams) {
   var history_statistics = (Long.MinValue, Long.MaxValue, 0L, 0L)
 
@@ -47,15 +49,21 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
     })
 
     cur.addSink(new RichSinkFunction[(Long, Long, Long, Long)] {
+      val LOG = LoggerFactory.getLogger(getClass)
+
       override def invoke(c: (Long, Long, Long, Long)) {
-        val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
-        val reportDir = { params.get("hibench.report.dir") }
+        // val params = { ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap) }
+        // val reportDir = { params.get("hibench.report.dir") }
 
         history_statistics = (Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4)
-        BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
-        BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
-        BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
-        BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
+        // BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
+        LOG.info("Current max: " + history_statistics._1)
+        // BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
+        LOG.info("Current min: " + history_statistics._2)
+        // BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
+        LOG.info("Current sum: " + history_statistics._3)
+        // BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
+        LOG.info("Current total: " + history_statistics._4)
         Unit
       }
     })
