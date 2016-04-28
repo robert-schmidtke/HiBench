@@ -62,16 +62,20 @@ class NumericCalcJob(subClassParams: ParamEntity, fieldIndex: Int, separator: St
       })
 
       var zero = new MultiReducer()
-      val cur = numbers.map(x => new MultiReducer(x, x, x, 1))
+      val currentTime = System.currentTimeMillis
+      val cur = numbers.map(x => new MultiReducer(currentTime, currentTime - subClassParams.batchInterval * 1000, x, 1))
         .fold(zero)((v1, v2) => v1.reduce(v2))
       //var cur = numbers.aggregate(zero)((v, x) => v.reduceValue(x), (v1, v2) => v1.reduce(v2))
       history_statistics.reduce(cur)
 
-      BenchLogUtil.logMsg("Current max: " + history_statistics.max)
-      BenchLogUtil.logMsg("Current min: " + history_statistics.min)
-      BenchLogUtil.logMsg("Current sum: " + history_statistics.sum)
-      BenchLogUtil.logMsg("Current total: " + history_statistics.count)
-
     })
+  }
+
+  override def postTerminationHook() = {
+    BenchLogUtil.logMsg("Latest time: " + history_statistics.max)
+    BenchLogUtil.logMsg("Earliest time: " + history_statistics.min)
+    BenchLogUtil.logMsg("Value sum: " + history_statistics.sum)
+    BenchLogUtil.logMsg("Value count: " + history_statistics.count)
+    BenchLogUtil.logMsg("Duration: " + (history_statistics.max - history_statistics.min) + "ms")
   }
 }

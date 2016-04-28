@@ -57,6 +57,11 @@ class RunBenchJobWithInit(params:ParamEntity) extends SpoutTops {
 
     ssc.start()
     ssc.awaitTermination()
+
+    postTerminationHook
+  }
+
+  def postTerminationHook() = {
   }
 
   def createStream(ssc:StreamingContext):DStream[(String, String)] = {
