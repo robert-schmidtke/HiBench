@@ -22,7 +22,7 @@ import com.intel.hibench.streambench.flink.RunBench
 import java.io.File
 import java.io.PrintWriter
 
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.LoggerFactory
 
 object BenchLogUtil extends Serializable {
   val LOG = LoggerFactory.getLogger(getClass)
