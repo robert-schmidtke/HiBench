@@ -32,6 +32,8 @@ import org.apache.flink.streaming.api.windowing.windows.Window
 import org.slf4j.LoggerFactory
 
 class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(subClassParams) {
+  var history_statistics = (Long.MinValue, Long.MaxValue, 0L, 0L)
+
   override def processStreamData[W <: Window](lines: WindowedStream[String, Int, W], env: StreamExecutionEnvironment) {
     val cur: DataStream[(Long, Long, Long, Long)] = lines.fold[(Long, Long, Long, Long)]((Long.MinValue, Long.MaxValue, 0L, 0L), new RichFoldFunction[String, (Long, Long, Long, Long)] {
       var separator = "\\s+"
@@ -55,23 +57,20 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
 
     cur.addSink(new RichSinkFunction[(Long, Long, Long, Long)] {
       var reportDir = "./"
-      var history_statistics: OperatorState[(Long, Long, Long, Long)] = null
 
       override def open(configuration: Configuration) = {
         val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
         reportDir = params.get("hibench.report.dir", reportDir)
-        history_statistics = getRuntimeContext.getKeyValueState("history_statistics", classOf[(Long, Long, Long, Long)], (Long.MinValue, Long.MaxValue, 0L, 0L))
       }
 
       override def invoke(c: (Long, Long, Long, Long)) {
-        val hs = history_statistics.value
-        history_statistics.update(Math.max(hs._1, c._1), Math.min(hs._2, c._2), hs._3 + c._3, hs._4 + c._4)
-        BenchLogUtil.logMsg("Current max: " + Math.max(hs._1, c._1), reportDir)
-        BenchLogUtil.logMsg("Current min: " + Math.min(hs._2, c._2), reportDir)
-        BenchLogUtil.logMsg("Current sum: " + (hs._3 + c._3), reportDir)
-        BenchLogUtil.logMsg("Current total: " + (hs._4 + c._4), reportDir)
+        history_statistics = (Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4)
+        BenchLogUtil.logMsg("Current max: " + history_statistics._1, reportDir)
+        BenchLogUtil.logMsg("Current min: " + history_statistics._2, reportDir)
+        BenchLogUtil.logMsg("Current sum: " + history_statistics._3, reportDir)
+        BenchLogUtil.logMsg("Current total: " + history_statistics._4, reportDir)
         Unit
       }
-    })
+    }).setParallelism(1)
   }
 }
