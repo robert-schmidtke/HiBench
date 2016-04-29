@@ -3,7 +3,6 @@
 #PBS -N hibench-terasort-ssd
 #PBS -l walltime=24:00:00
 #PBS -j oe
-#PBS -q mppq
 #PBS -l gres=ccm
 
 source /opt/modules/default/init/bash
@@ -47,7 +46,7 @@ sleep 60s
 
 cp \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf.template \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf
 cat >> \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf << EOL
-hibench.scale.profile tera
+hibench.scale.profile threeseventhtera
 dfs.replication 1
 mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
@@ -96,4 +95,4 @@ rm launch-$PBS_JOBID.sh
 
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/conf
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/logs
-rm -rf /flash/scratch5/$USER/hdfs
+rm -rf /flash/scratch4/$USER/hdfs

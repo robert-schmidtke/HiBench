@@ -7,16 +7,16 @@ fi
 
 export HOSTNAME=$(hostname)
 
-#export HADOOP_PREFIX="$WORK2/hadoop-2.7.1"
-export HADOOP_PREFIX="$WORK2/hadoop/hadoop-dist/target/hadoop-2.7.1"
+#export HADOOP_PREFIX="$WORK/hadoop-2.7.1"
+export HADOOP_PREFIX="$WORK/hadoop/hadoop-dist/target/hadoop-2.7.1"
 export HADOOP_HOME=$HADOOP_PREFIX
 export HADOOP_CONF_DIR="$HADOOP_PREFIX/conf/$PBS_JOBID"
 
-export SPARK_HOME="$WORK2/spark-1.6.0-bin-without-hadoop"
-#export FLINK_HOME="$WORK2/flink-0.10.2"
-export FLINK_HOME="$WORK2/flink/build-target"
+export SPARK_HOME="$WORK/spark-1.6.0-bin-without-hadoop"
+#export FLINK_HOME="$WORK/flink-0.10.2"
+export FLINK_HOME="$WORK/flink/build-target"
 
-export HIBENCH_HOME=$WORK2/HiBench
+export HIBENCH_HOME=$WORK/HiBench-ssd
 
 IFS=$'\n' read -d '' -r -a HADOOP_NODES < $PBS_NODEFILE
 export HADOOP_NODES

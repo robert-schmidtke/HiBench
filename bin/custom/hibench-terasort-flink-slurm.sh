@@ -73,7 +73,9 @@ hibench.yarn.driver.memory 16G
 #spark.eventLog.dir hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events
 EOL
 
+$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 $HIBENCH_HOME/workloads/terasort/prepare/prepare.sh
+$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 $HADOOP_PREFIX/bin/hadoop fs -mkdir -p hdfs://$HADOOP_NAMENODE:8020/HiBench/Terasort/Output
 $FLINK_HOME/bin/flink run \
   -m yarn-cluster \
@@ -86,6 +88,7 @@ $FLINK_HOME/bin/flink run \
   /scratch/$USER/terasort/target/scala-2.10/terasort_2.10-0.0.1.jar \
   hdfs://$HADOOP_NAMENODE:8020 /HiBench/Terasort/Input /HiBench/Terasort/Output \
   $parallelism
+$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 
 #$HIBENCH_HOME/workloads/terasort/mapreduce/bin/run.sh
 #$HIBENCH_HOME/workloads/terasort/spark/scala/bin/run.sh
