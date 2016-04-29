@@ -46,7 +46,7 @@ sleep 60s
 
 cp \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf.template \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf
 cat >> \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf << EOL
-hibench.scale.profile tera
+hibench.scale.profile oneseventhtera
 dfs.replication 1
 mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
