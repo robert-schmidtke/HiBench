@@ -126,10 +126,10 @@ echo "$(date): Starting data generation"
 $HIBENCH_HOME/workloads/streamingbench/prepare/gendata.sh
 echo "$(date): Data generation done"
 sleep 30s
-echo "Killing Flink Job, PID: ${FLINK_PID}"
-kill -9 $FLINK_PID
-sleep 30s
-echo "Killed Flink Job, PID: ${FLINK_PID}"
+#echo "$(date): Killing Flink Job, PID: ${FLINK_PID}"
+#kill -9 $FLINK_PID
+#sleep 30s
+#echo "$(date): Killed Flink Job, PID: ${FLINK_PID}"
 #$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 
 # job history files are moved to the done folder every 180s
@@ -137,15 +137,17 @@ echo "Killed Flink Job, PID: ${FLINK_PID}"
 #$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done $HIBENCH_HOME/bin/custom/hibench-terasort.$SLURM_JOB_ID-history
 #$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events $HIBENCH_HOME/bin/custom/hibench-terasort.$SLURM_JOB_ID-sparkhistory
 
-echo "Deleting local Flink folders $(date)"
-srun -N$SLURM_JOB_NUM_NODES rm -rf /local/$USER/flink/$SLURM_JOB_ID
-echo "Deleting local Flink folders done $(date)"
-
 echo "Stopping Kafka on ${KAFKA_NODES[@]} $(date)"
 srun -N$NUM_KAFKA_NODES --nodelist=$(join , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/stop-kafka-slurm.sh
 echo "Stopping Kafka done $(date)"
 
-sleep 10s
+sleep 30s
+
+echo "Deleting local Flink folders $(date)"
+srun -N$SLURM_JOB_NUM_NODES rm -rf /local/$USER/flink/$SLURM_JOB_ID
+echo "Deleting local Flink folders done $(date)"
+
+sleep 45s
 
 echo "Stopping Zookeeper $(date)"
 srun --nodes=1-1 --nodelist=$HADOOP_NAMENODE $HIBENCH_HOME/bin/custom/stop-zookeeper-slurm.sh
@@ -167,6 +169,6 @@ srun -N$SLURM_JOB_NUM_NODES rm -rf /local/$USER/kafka
 echo "Cleaning local directories done"
 
 rm -rf $HADOOP_PREFIX/conf*
-#rm -rf $HADOOP_PREFIX/log*
+rm -rf $HADOOP_PREFIX/log*
 
 #$HOME/collectl-slurm/collectl_slurm.sh stop -savelogs
