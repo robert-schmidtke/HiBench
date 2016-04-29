@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #PBS -N hibench-terasort
-#PBS -l walltime=12:00:00
+#PBS -l walltime=48:00:00
 #PBS -j oe
 #PBS -l gres=ccm
 
@@ -42,37 +42,38 @@ sleep 60s
 
 \$HADOOP_PREFIX/bin/hadoop fs -mkdir -p hdfs://\$HADOOP_NAMENODE:8020/tmp/spark-events
 
+cores=4
+
 cp \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf.template \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf
 cat >> \$HIBENCH_HOME/workloads/terasort/conf/10-terasort-userdefine.conf << EOL
 hibench.scale.profile tera
 dfs.replication 1
 mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
-#hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * 8))
-#hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * 600))
-hibench.default.map.parallelism 300
-#hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * 8))
-#hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * 600))
-hibench.default.shuffle.parallelism 300
+hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * \$cores))
+hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * \$cores))
 hibench.yarn.executor.num \$NUM_HADOOP_DATANODES
 hibench.yarn.executor.memory 20G
-#hibench.yarn.executor.cores 8
-hibench.yarn.executor.cores 4
+hibench.yarn.executor.cores \$cores
 hibench.yarn.driver.memory 8G
 
 spark.driver.memory 8G
-spark.executor.cores 4
+spark.executor.cores \$cores
 spark.executor.memory 20G
 spark.eventLog.enabled true
 spark.eventLog.dir hdfs://\$HADOOP_NAMENODE:8020/tmp/spark-events
 EOL
 
-\$HIBENCH_HOME/bin/custom/dump_lustre_stats.sh
+\$HIBENCH_HOME/bin/custom/reset_lustre_stats.sh
 \$HIBENCH_HOME/workloads/terasort/prepare/prepare.sh
 \$HIBENCH_HOME/bin/custom/dump_lustre_stats.sh
-#\$HIBENCH_HOME/workloads/terasort/mapreduce/bin/run.sh
-#\$HIBENCH_HOME/bin/custom/dump_lustre_stats.sh
-\$HIBENCH_HOME/workloads/terasort/spark/scala/bin/run.sh
+\$HIBENCH_HOME/bin/custom/reset_lustre_stats.sh
+\$HADOOP_PREFIX/bin/hadoop fs -mkdir -p hdfs://\$HADOOP_NAMENODE:8020/HiBench/Terasort/Output
+\$HIBENCH_HOME/workloads/terasort/spark/scala/bin/run-eastcircle.sh \
+  hdfs://\$HADOOP_NAMENODE:8020 /HiBench/Terasort/Input /HiBench/Terasort/Output \
+  768
+#  \$((\$NUM_HADOOP_DATANODES * \$cores * 8))
+#  768
 \$HIBENCH_HOME/bin/custom/dump_lustre_stats.sh
 
 # job history files are moved to the done folder every 180s

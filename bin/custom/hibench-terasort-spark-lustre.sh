@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #PBS -N hibench-terasort
-#PBS -l walltime=12:00:00
+#PBS -l walltime=24:00:00
 #PBS -j oe
 #PBS -l gres=ccm
 
@@ -49,10 +49,10 @@ dfs.replication 1
 mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
 #hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * 8))
-#hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * 600))
+#hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * 60))
 hibench.default.map.parallelism 300
 #hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * 8))
-#hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * 600))
+#hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * 60))
 hibench.default.shuffle.parallelism 300
 hibench.yarn.executor.num \$NUM_HADOOP_DATANODES
 hibench.yarn.executor.memory 20G
