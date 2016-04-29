@@ -121,6 +121,14 @@ function rmr-hdfs(){		# rm -r for hdfs
     execute_withlog ${CMD}
 }
 
+function mkdirp-hdfs(){		# mkdir -p for hdfs
+    assert $1 "dir parameter missing"
+    MKDIR_CMD="fs -mkdir -p"
+    local CMD="$HADOOP_EXECUTABLE --config $HADOOP_CONF_DIR $MKDIR_CMD $1"
+    echo -e "${BCyan}hdfs mkdir -p: ${Cyan}${CMD}${Color_Off}" > /dev/stderr
+    execute_withlog ${CMD}
+}
+
 function upload-to-hdfs(){
     assert $1 "local parameter missing"
     assert $2 "remote parameter missing"

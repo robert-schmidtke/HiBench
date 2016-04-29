@@ -3,6 +3,7 @@
 #PBS -N hibench-terasort-ssd
 #PBS -l walltime=24:00:00
 #PBS -j oe
+#PBS -q mppq
 #PBS -l gres=ccm
 
 source /opt/modules/default/init/bash
@@ -95,4 +96,4 @@ rm launch-$PBS_JOBID.sh
 
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/conf
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/logs
-rm -rf /flash/scratch4/$USER/hdfs
+rm -rf /flash/scratch5/$USER/hdfs

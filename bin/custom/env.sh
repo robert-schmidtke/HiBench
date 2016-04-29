@@ -7,14 +7,16 @@ fi
 
 export HOSTNAME=$(hostname)
 
-export HADOOP_PREFIX="$HOME/hadoop-2.7.1"
-#export HADOOP_PREFIX="$HOME/workspace/hadoop/hadoop-dist/target/hadoop-2.7.1"
+#export HADOOP_PREFIX="$WORK2/hadoop-2.7.1"
+export HADOOP_PREFIX="$WORK2/hadoop/hadoop-dist/target/hadoop-2.7.1"
 export HADOOP_HOME=$HADOOP_PREFIX
 export HADOOP_CONF_DIR="$HADOOP_PREFIX/conf/$PBS_JOBID"
 
-export SPARK_HOME="$HOME/spark-1.6.0-bin-without-hadoop"
+export SPARK_HOME="$WORK2/spark-1.6.0-bin-without-hadoop"
+#export FLINK_HOME="$WORK2/flink-0.10.2"
+export FLINK_HOME="$WORK2/flink/build-target"
 
-export HIBENCH_HOME=$HOME/workspace/HiBench
+export HIBENCH_HOME=$WORK2/HiBench
 
 IFS=$'\n' read -d '' -r -a HADOOP_NODES < $PBS_NODEFILE
 export HADOOP_NODES
@@ -24,11 +26,13 @@ if [ $NUM_HADOOP_NODES -lt 2 ]; then
   exit 1
 fi
 
-export HADOOP_NAMENODE=${HADOOP_NODES[0]}
-export HADOOP_DATANODES=(${HADOOP_NODES[@]:1})
+export HADOOP_NAMENODE=$(hostname) # ${HADOOP_NODES[0]}
+hadoop_namenode=($HADOOP_NAMENODE) # tmp array var to remove from data nodes array
+export HADOOP_DATANODES=(${HADOOP_NODES[@]/$hadoop_namenode})
 export NUM_HADOOP_DATANODES=${#HADOOP_DATANODES[@]}
 
 export NUM_GFS=2
+export SCRATCH=/flash/scratch5
 
 # node-local directory for HDFS
 export HDFS_LOCAL_DIR="$USER/hdfs/$PBS_JOBID"
