@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USAGE="Usage: stop-hdfs-slurm.sh"
+USAGE="Usage: stop-hdfs-ssh-lustre.sh"
 
 if [ -z $PBS_JOBID ]; then
   echo "No PBS environment detected. $USAGE"

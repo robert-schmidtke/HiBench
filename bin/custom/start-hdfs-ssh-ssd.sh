@@ -25,7 +25,7 @@ fi
 # HADOOP_DATANODES
 # HADOOP_PREFIX
 # HADOOP_CONF_DIR
-source $(dirname $0)/env.sh
+source $(dirname $0)/env-ssd.sh
 
 echo "Using Hadoop Distribution in '$HADOOP_PREFIX'."
 
