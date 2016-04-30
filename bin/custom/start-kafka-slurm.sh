@@ -25,6 +25,6 @@ sed -i "/^broker\.id/c\broker.id=$broker_id" $KAFKA_HOME/config/$SLURM_JOB_ID/$(
 sed -i "/^port/c\port=$KAFKA_PORT" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties
 sed -i "/^log\.dirs/c\log.dirs=/local/$KAFKA_LOCAL_DIR" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties
 sed -i "/^num\.partitions/c\num.partitions=$KAFKA_DEFAULT_PARTITIONS" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties
-sed -i "/^zookeeper\.connect/c\zookeeper.connect=$ZOOKEEPER_NODE:$ZOOKEEPER_PORT" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties
+sed -i "/^zookeeper\.connect=/c\zookeeper.connect=$ZOOKEEPER_NODE:$ZOOKEEPER_PORT" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties
 
 nohup $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties >> /local/$KAFKA_LOCAL_DIR/$(hostname).log 2>&1 &

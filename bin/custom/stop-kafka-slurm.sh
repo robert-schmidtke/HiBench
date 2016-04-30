@@ -9,6 +9,7 @@ fi
 
 source $(dirname $0)/env-slurm.sh
 
+sed -i 's/SIGINT/SIGTERM/g' $KAFKA_HOME/bin/kafka-server-stop.sh
 $KAFKA_HOME/bin/kafka-server-stop.sh
 sleep 5s
 
