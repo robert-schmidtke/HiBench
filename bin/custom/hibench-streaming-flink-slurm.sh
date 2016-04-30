@@ -147,11 +147,11 @@ echo "Deleting local Flink folders $(date)"
 srun -N$SLURM_JOB_NUM_NODES rm -rf /local/$USER/flink/$SLURM_JOB_ID
 echo "Deleting local Flink folders done $(date)"
 
-sleep 45s
-
 echo "Stopping Zookeeper $(date)"
 srun --nodes=1-1 --nodelist=$HADOOP_NAMENODE $HIBENCH_HOME/bin/custom/stop-zookeeper-slurm.sh
 echo "Stopping Zookeeper done $(date)"
+
+sleep 45s
 
 echo "Stopping Hadoop $(date)"
 srun --nodes=1-1 --nodelist=$HADOOP_NAMENODE $HIBENCH_HOME/bin/custom/stop-hdfs-slurm.sh
