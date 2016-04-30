@@ -21,9 +21,9 @@ for kafka_node in ${KAFKA_NODES[@]}; do
   ssh $kafka_node "$KAFKA_HOME/bin/kafka-server-stop.sh"
   sleep 5s
 
-#  ssh $kafka_node "rm $KAFKA_CONFIG"
-#  sleep 5s
+  ssh $kafka_node "rm $KAFKA_CONFIG"
+  sleep 5s
 
-#  ssh $kafka_node "find $KAFKA_CONFIG_DIR -maxdepth 0 -empty -exec rm -r {} \;"
-#  ssh $kafka_node "rm -rf $KAFKA_LOG_DIR"
+  ssh $kafka_node "find $KAFKA_CONFIG_DIR -maxdepth 0 -empty -exec rm -r {} \;"
+  ssh $kafka_node "rm -rf $KAFKA_LOG_DIR"
 done
