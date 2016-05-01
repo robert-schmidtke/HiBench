@@ -110,7 +110,7 @@ public class NewKafkaConnector {
     Callback callback = new Callback() {
       public void onCompletion(RecordMetadata metadata, Exception e) {
         if (e != null) {
-          System.err.println("Error in callback:")
+          System.err.println("Error in callback:");
           e.printStackTrace();
         }
       }
@@ -140,7 +140,7 @@ public class NewKafkaConnector {
       }
       ous.close();
     } catch (IOException e) {
-      System.err.println("Error in send after " + recordsSent + " records")
+      System.err.println("Error in send after " + recordsSent + " records");
       e.printStackTrace();
     }
 
