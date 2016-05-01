@@ -117,6 +117,8 @@ public class NewKafkaConnector {
     };
 
     ByteArrayOutputStream ous = new ByteArrayOutputStream();
+    int percent = 0;
+    System.out.println("Progress: " + percent + "%");
     try {
       while (recordsSent < totalRecord) {
         String line = reader.readLine();
@@ -135,6 +137,14 @@ public class NewKafkaConnector {
         producer.send(record, callback);
 
         recordsSent ++;
+
+        int p = (int) (100.0 * recordsSent / totalRecord);
+        if (p > percent) {
+          percent = p;
+          System.out.println("Progress: " + percent + "%");
+        }
+
+
         bytesSent += ous.size();
         ous.reset();
       }
