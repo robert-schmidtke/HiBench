@@ -18,7 +18,8 @@ module load java/jdk1.8.0_51
 echo "Starting HiBench Streaming"
 date
 
-export NUM_KAFKA_NODES=2
+export NUM_KAFKA_NODES=4
+export NUM_PRODUCER_NODES=4
 source $WORK/HiBench-ssd/bin/custom/env-ssd.sh
 
 cp \$HIBENCH_HOME/conf/99-user_defined_properties.conf.template \$HIBENCH_HOME/conf/99-user_defined_properties.conf
@@ -61,14 +62,15 @@ cp \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.con
 cat >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf << EOL
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions \$KAFKA_DEFAULT_PARTITIONS
-hibench.streamingbench.scale.profile tiny
-hibench.streamingbench.batch_interval 10
+hibench.streamingbench.scale.profile large
+hibench.streamingbench.batch_interval 0
 hibench.streamingbench.copies 1
 hibench.streamingbench.testWAL false
 hibench.streamingbench.direct_mode true
 hibench.streamingbench.prepare.mode push
 hibench.streamingbench.prepare.push.records \\\${hibench.kmeans.num_of_samples}
 hibench.streamingbench.record_count \\\${hibench.kmeans.num_of_samples}
+hibench.streamingbench.num_producers \$NUM_PRODUCER_NODES
 hibench.streamingbench.brokerList \$broker_list
 
 dfs.replication 1
@@ -98,10 +100,11 @@ echo "\$(date): Submitting Flink Job"
 FLINK_PID=\$!
 echo "Flink Job running as PID \${FLINK_PID}"
 sleep 30s
-echo "\$(date): Starting data generation"
-\$HIBENCH_HOME/workloads/streamingbench/prepare/gendata.sh
+
+echo "\$(date): Starting data generation on \${PRODUCER_NODES[@]}"
+\$HIBENCH_HOME/workloads/streamingbench/prepare/gendata.sh "\${PRODUCER_NODES[@]}"
 echo "\$(date): Data generation done"
-sleep 30s
+sleep 120s
 #\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
 
 # this should kill Flink too
