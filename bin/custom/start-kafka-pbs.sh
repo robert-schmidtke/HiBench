@@ -19,6 +19,7 @@ for kafka_node in ${KAFKA_NODES[@]}; do
   ssh $kafka_node "cp $KAFKA_HOME/config/server.properties $KAFKA_CONFIG"
   ssh $kafka_node "mkdir -p $KAFKA_LOG_DIR"
   ssh $kafka_node "sed -i \"/^broker\.id/c\broker.id=$broker_id\" $KAFKA_CONFIG"
+  ssh $kafka_node "sed -i \"/^num\.network\.threads/c\num.network.threads=4\" $KAFKA_CONFIG"
   ssh $kafka_node "sed -i \"/^port/c\port=$KAFKA_PORT\" $KAFKA_CONFIG"
   ssh $kafka_node "sed -i \"/^log\.dirs/c\log.dirs=$KAFKA_LOG_DIR\" $KAFKA_CONFIG"
   ssh $kafka_node "sed -i \"/^num\.partitions/c\num.partitions=$KAFKA_DEFAULT_PARTITIONS\" $KAFKA_CONFIG"
