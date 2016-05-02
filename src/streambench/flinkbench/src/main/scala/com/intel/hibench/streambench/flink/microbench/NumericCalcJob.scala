@@ -69,17 +69,19 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
     cur.addSink(new RichSinkFunction[(Long, Long, Long, Long, Long, Long)] {
       var reportDir = "./"
       var recordCount = 0L
+      var numProducers = 0L
       var history_statistics = (Long.MinValue, Long.MaxValue, 0L, 0L, 0L, 0L)
 
       override def open(configuration: Configuration) = {
         val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
         reportDir = params.get("hibench.report.dir", reportDir)
         recordCount = params.getLong("hibench.streamingbench.record_count", recordCount)
+        numProducers = params.getLong("hibench.streamingbench.num_producers", numProducers)
       }
 
       override def invoke(c: (Long, Long, Long, Long, Long, Long)) {
         // only count if we're receiving relevant records
-        if (c._4 > 0 && history_statistics._4 <= recordCount) {
+        if ((c._4 > 0 || c._6 > 0) && history_statistics._4 <= recordCount * numProducers) {
           history_statistics = (
             Math.max(history_statistics._1, c._1), Math.min(history_statistics._2, c._2), history_statistics._3 + c._3, history_statistics._4 + c._4,
             history_statistics._5 + c._5, history_statistics._6 + c._6)
