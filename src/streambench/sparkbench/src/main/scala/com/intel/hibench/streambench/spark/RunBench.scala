@@ -43,6 +43,7 @@ object RunBench {
     val consumerGroup = conf.getProperty("hibench.streamingbench.consumer_group")
     val kafkaThreads = conf.getProperty("hibench.streamingbench.receiver_nodes").toInt
     val recordCount = conf.getProperty("hibench.streamingbench.record_count").toLong
+    val numProducers = conf.getProperty("hibench.streamingbench.num_producers").toLong
     val copies = conf.getProperty("hibench.streamingbench.copies").toInt
     val testWAL = conf.getProperty("hibench.streamingbench.testWAL").toBoolean
     val path = if (testWAL) conf.getProperty("hibench.streamingbench.checkpoint_path") else ""
@@ -53,7 +54,7 @@ object RunBench {
 
     this.reportDir = conf.getProperty("hibench.report.dir")
 
-    val param = ParamEntity(master, benchName, batchInterval, zkHost, consumerGroup, topic, kafkaThreads, recordCount, copies, testWAL, path, debug, directMode, brokerList, totalParallel)
+    val param = ParamEntity(master, benchName, batchInterval, zkHost, consumerGroup, topic, kafkaThreads, recordCount, numProducers, copies, testWAL, path, debug, directMode, brokerList, totalParallel)
     println(s"params:$param")
     benchName match {
       case "project" =>

@@ -9,6 +9,7 @@ case class ParamEntity(
   topic: String,
   threads: Int,
   recordCount: Long,
+  numProducers: Long,
   copies: Int,
   testWAL: Boolean,
   path: String,

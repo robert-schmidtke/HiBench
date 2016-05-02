@@ -51,7 +51,7 @@ class LatencyListener(ssc: StreamingContext, params: ParamEntity) extends Stream
       BenchLogUtil.logMsg("LatencyController: total records: " + totalRecords)
     }
 
-    if (totalRecords >= params.recordCount) {
+    if (totalRecords >= params.recordCount * params.numProducers) {
       if (hasStarted && !thread.isAlive) {
         //not receiving any data more, finish
         endTime = System.currentTimeMillis()
