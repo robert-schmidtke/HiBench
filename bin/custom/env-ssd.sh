@@ -38,6 +38,9 @@ export NUM_HADOOP_DATANODES=${#HADOOP_DATANODES[@]}
 
 export KAFKA_NODES=(${nodes[@]:$NUM_HADOOP_NODES:$NUM_KAFKA_NODES})
 
+export NUM_PRODUCER_NODES=${NUM_PRODUCER_NODES:-1}
+export PRODUCER_NODES=(${nodes[@]:0:$NUM_PRODUCER_NODES})
+
 export NUM_GFS=2
 export SCRATCH=/flash/scratch5
 
