@@ -19,6 +19,8 @@ workload_folder=`cd "$workload_folder"; pwd`
 workload_root=${workload_folder}/..
 . "${workload_root}/../../bin/functions/load-bench-config.sh"
 
+producer_nodes=("$@")
+
 enter_bench StreamingBenchPrepare ${workload_root} ${workload_folder}
 show_bannar start
 
@@ -35,9 +37,16 @@ JVM_OPTS="-Xmx256M -server -XX:+UseCompressedOops -XX:+UseParNewGC -XX:+UseConcM
 printFullLog
 
 if [ "$STREAMING_DATAGEN_MODE" == "push" ]; then
-	    CMD="$JAVA_BIN $JVM_OPTS com.intel.hibench.streambench.StartNew $SPARKBENCH_PROPERTIES_FILES $DATA_FILE1 0 $DATA_FILE2 0"
-	    echo -e "${BGreen}Sending streaming data to kafka, concurrently: ${Green}$CMD${Color_Off}"
-	    execute_withlog $CMD
+  for producer_node in ${producer_nodes[@]}; do
+    CMD="$JAVA_BIN $JVM_OPTS com.intel.hibench.streambench.StartNew $SPARKBENCH_PROPERTIES_FILES $DATA_FILE1 0 $DATA_FILE2 0"
+    #echo -e "${BGreen}Sending streaming data to kafka, concurrently: ${Green}$CMD${Color_Off}"
+    #execute_withlog $CMD
+    (ssh $producer_node "cd $workload_folder && $CMD" 2>&1) &
+    echo "Producer running as $!"
+  done
+  echo "Waiting for all producers"
+  wait
+  echo "All producers done"
 else
     CMD="$JAVA_BIN $JVM_OPTS com.intel.hibench.streambench.StartPeriodic $SPARKBENCH_PROPERTIES_FILES $DATA_FILE1 0 $DATA_FILE2 0"
     echo -e "${BGreen}Sending streaming data to kafka, periodically: ${Green}$CMD${Color_Off}"
