@@ -52,13 +52,13 @@ echo "Starting Zookeeper \$(date)"
 \$HIBENCH_HOME/bin/custom/start-zookeeper-pbs.sh
 echo "Starting Zookeeper done \$(date)"
 
-#sleep 10s
+sleep 10s
 
 echo "Starting Kafka on \${KAFKA_NODES[@]} \$(date)"
 \$HIBENCH_HOME/bin/custom/start-kafka-pbs.sh
 echo "Starting Kafka on \${KAFKA_NODES[@]} done \$(date)"
 
-#sleep 60s
+sleep 60s
 
 broker_list=\$(join_array ":\${KAFKA_PORT}," \${KAFKA_NODES[@]}):\$KAFKA_PORT
 node_list=\$(join_array "," \${NODES[@]})
