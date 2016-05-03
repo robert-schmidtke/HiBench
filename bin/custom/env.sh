@@ -21,25 +21,26 @@ export HIBENCH_HOME=$WORK2/HiBench
 export ZOOKEEPER_HOME=$WORK2/zookeeper-3.3.6
 export KAFKA_HOME=$WORK2/kafka_2.10-0.8.1
 
-IFS=$'\n' read -d '' -r -a nodes < $PBS_NODEFILE
+IFS=$'\n' read -d '' -r -a NODES < $PBS_NODEFILE
+export NODES
 export NUM_KAFKA_NODES=${NUM_KAFKA_NODES:-0}
-export NUM_HADOOP_NODES=$((${#nodes[@]} - $NUM_KAFKA_NODES))
+export NUM_HADOOP_NODES=$((${#NODES[@]} - $NUM_KAFKA_NODES))
 if [ $NUM_HADOOP_NODES -lt 2 ]; then
   echo "Please specify at least two nodes."
   exit 1
 fi
 
-export HADOOP_NODES=(${nodes[@]:0:$NUM_HADOOP_NODES})
+export HADOOP_NODES=(${NODES[@]:0:$NUM_HADOOP_NODES})
 
 export HADOOP_NAMENODE=$(hostname) # ${HADOOP_NODES[0]}
 hadoop_namenode=($HADOOP_NAMENODE) # tmp array var to remove from data nodes array
 export HADOOP_DATANODES=(${HADOOP_NODES[@]/$hadoop_namenode})
 export NUM_HADOOP_DATANODES=${#HADOOP_DATANODES[@]}
 
-export KAFKA_NODES=(${nodes[@]:$NUM_HADOOP_NODES:$NUM_KAFKA_NODES})
+export KAFKA_NODES=(${NODES[@]:$NUM_HADOOP_NODES:$NUM_KAFKA_NODES})
 
 export NUM_PRODUCER_NODES=${NUM_PRODUCER_NODES:-1}
-export PRODUCER_NODES=(${nodes[@]:0:$NUM_PRODUCER_NODES})
+export PRODUCER_NODES=(${NODES[@]:0:$NUM_PRODUCER_NODES})
 
 export NUM_GFS=2
 export SCRATCH=/flash/scratch5
