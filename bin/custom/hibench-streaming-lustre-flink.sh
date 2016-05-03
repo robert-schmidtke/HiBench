@@ -9,6 +9,8 @@ module load ccm java/jdk1.8.0_51
 module unload atp # abnormal termination processing
 cd $PBS_O_WORKDIR
 
+batch_interval=$1
+
 cat > detect-skew-$PBS_JOBID.sh << EOF
 #!/bin/bash
 echo "hibench.custom.nodes.\$(hostname).time \$(date +%s%3N)"
@@ -18,6 +20,7 @@ cat > launch-$PBS_JOBID.sh << EOF
 #!/bin/bash
 
 skew_file=\$1
+batch_interval=\$2
 
 module load java/jdk1.8.0_51
 
@@ -68,7 +71,7 @@ cat >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions \$KAFKA_DEFAULT_PARTITIONS
 hibench.streamingbench.scale.profile larger
-hibench.streamingbench.batch_interval 10000
+hibench.streamingbench.batch_interval \$batch_interval
 hibench.streamingbench.batch_timeunit ms
 hibench.streamingbench.copies 1
 hibench.streamingbench.testWAL false
@@ -144,7 +147,7 @@ aprun -n${#NODES[@]} -N1 detect-skew-$PBS_JOBID.sh > $PBS_JOBID.skew
 rm detect-skew-$PBS_JOBID.sh
 
 chmod +x launch-$PBS_JOBID.sh
-ccmrun ./launch-$PBS_JOBID.sh "$(pwd $(dirname $PBS_JOBID.skew))/$PBS_JOBID.skew"
+ccmrun ./launch-$PBS_JOBID.sh "$(pwd $(dirname $PBS_JOBID.skew))/$PBS_JOBID.skew" $batch_interval
 rm launch-$PBS_JOBID.sh
 
 rm -rf $WORK2/hadoop/hadoop-dist/target/hadoop-2.7.1/conf

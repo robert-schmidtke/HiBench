@@ -9,8 +9,12 @@ module load ccm java/jdk1.8.0_51
 module unload atp # abnormal termination processing
 cd $PBS_O_WORKDIR
 
+batch_interval=$1
+
 cat > launch-$PBS_JOBID.sh << EOF
 #!/bin/bash
+
+batch_interval=\$1
 
 module load java/jdk1.8.0_51
 
@@ -64,7 +68,7 @@ cat >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions \$KAFKA_DEFAULT_PARTITIONS
 hibench.streamingbench.scale.profile larger
-hibench.streamingbench.batch_interval 10000
+hibench.streamingbench.batch_interval \$batch_interval
 hibench.streamingbench.batch_timeunit ms
 hibench.streamingbench.copies 1
 hibench.streamingbench.testWAL false
@@ -134,7 +138,7 @@ date
 EOF
 
 chmod +x launch-$PBS_JOBID.sh
-ccmrun ./launch-$PBS_JOBID.sh
+ccmrun ./launch-$PBS_JOBID.sh $batch_interval
 rm launch-$PBS_JOBID.sh
 
 rm -rf $WORK2/hadoop/hadoop-dist/target/hadoop-2.7.1/conf
