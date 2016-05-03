@@ -41,20 +41,37 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
       var reportDir = "./"
       var batchInterval = 0
 
+      var skews = new HashMap[String, Long]
+      var headNode = ""
+
       override def open(configuration: Configuration) = {
         val params = ParameterTool.fromMap(getRuntimeContext.getExecutionConfig.getGlobalJobParameters.toMap)
         separator = params.get("hibench.streamingbench.separator", separator)
         index = params.getInt("hibench.streamingbench.field_index", index)
         reportDir = params.get("hibench.report.dir", reportDir)
         batchInterval = params.getInt("hibench.streamingbench.batch_interval", batchInterval)
+        
+        val nodes = params.get("hibench.custom.nodes") match {
+          case s: String => s.split(",")
+          case _ => Array[String]()
+        }
+
+        for (node <- nodes) {
+          headNode = nodes(0)
+          val headTime = params.getLong("hibench.custom.nodes." + headNode + ".time")
+          skews(node) = headTime - params.getLong("hibench.custom.nodes." + node + ".time")
+        }
       }
 
       override def fold(m: (Long, Long, Long, Long, Long, Long), line: String): (Long, Long, Long, Long, Long, Long) = {
+        val hostname = System.getenv().get("HOSTNAME")
         val currentTime = System.currentTimeMillis
+        val correctedLocalTime = currentTime + skews.getOrElse(hostname, 0L)
         if (line.contains("+")) {
           // hostname+timestamp
           val splits = line.split("\\+")
-          (m._1, m._2, m._3, m._4, m._5 + (currentTime - splits(1).toLong), m._6 + 1)
+          val correctedForeignTime = splits(1).toLong + skews.getOrElse(splits(0), 0L)
+          (m._1, m._2, m._3, m._4, m._5 + (correctedLocalTime - correctedForeignTime), m._6 + 1)
         } else {
           val splits = line.trim.split(separator)
           if (index < splits.length) {
