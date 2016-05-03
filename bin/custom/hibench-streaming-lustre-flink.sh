@@ -10,8 +10,15 @@ module load ccm java/jdk1.8.0_51
 module unload atp # abnormal termination processing
 cd $PBS_O_WORKDIR
 
+cat > detect-skew-$PBS_JOBID.sh << EOF
+#!/bin/bash
+echo "hibench.custom.nodes.\$(hostname).time \$(date +%s%3N)"
+EOF
+
 cat > launch-$PBS_JOBID.sh << EOF
 #!/bin/bash
+
+skew_file=\$1
 
 module load java/jdk1.8.0_51
 
@@ -54,6 +61,7 @@ echo "Starting Kafka on \${KAFKA_NODES[@]} done \$(date)"
 sleep 60s
 
 broker_list=\$(join_array ":\${KAFKA_PORT}," \${KAFKA_NODES[@]}):\$KAFKA_PORT
+node_list=\$(join_array "," \${NODES[@]})
 
 cores=4
 #parallelism=770
@@ -62,7 +70,7 @@ cp \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.con
 cat >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf << EOL
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions \$KAFKA_DEFAULT_PARTITIONS
-hibench.streamingbench.scale.profile tiny
+hibench.streamingbench.scale.profile large
 hibench.streamingbench.batch_interval 10
 hibench.streamingbench.copies 1
 hibench.streamingbench.testWAL false
@@ -88,7 +96,12 @@ hibench.yarn.taskmanager.slots \$cores
 hibench.yarn.jobmanager.memory 1792
 flink.taskmanager.memory 20480
 flink.jobmanager.memory 1792
+
+# for our time measurements to be able to take clock skew into account
+hibench.custom.nodes \$node_list
 EOL
+
+head -n\${#NODES[@]} \$skew_file >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf
 
 #\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
 \$HIBENCH_HOME/workloads/streamingbench/prepare/initTopic.sh
@@ -137,13 +150,17 @@ date
 
 EOF
 
+IFS=$'\n' read -d '' -r -a NODES < $PBS_NODEFILE
+chmod +x detect-skew-$PBS_JOBID.sh
+aprun -n${#NODES[@]} -N1 detect-skew-$PBS_JOBID.sh > $PBS_JOBID.skew
+rm detect-skew-$PBS_JOBID.sh
+
 chmod +x launch-$PBS_JOBID.sh
-ccmrun ./launch-$PBS_JOBID.sh
+ccmrun ./launch-$PBS_JOBID.sh "$(pwd $(dirname $PBS_JOBID.skew))/$PBS_JOBID.skew"
 rm launch-$PBS_JOBID.sh
 
 rm -rf $WORK2/hadoop/hadoop-dist/target/hadoop-2.7.1/conf
 rm -rf $WORK2/hadoop/hadoop-dist/target/hadoop-2.7.1/logs
 rm -rf $WORK/hdfs
 rm -rf $WORK2/hdfs
-rm -rf $WORK/kafka
 rm -rf $WORK2/kafka
