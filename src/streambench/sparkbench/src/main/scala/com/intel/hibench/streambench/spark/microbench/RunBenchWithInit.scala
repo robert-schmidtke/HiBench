@@ -19,7 +19,7 @@ package com.intel.hibench.streambench.spark.microbench
 
 import com.intel.hibench.streambench.spark.entity.ParamEntity
 import org.apache.spark.SparkConf
-import org.apache.spark.streaming.{Seconds,StreamingContext}
+import org.apache.spark.streaming.{Milliseconds,StreamingContext}
 
 import org.apache.spark.streaming.kafka._
 import org.apache.spark.streaming.dstream._
@@ -37,9 +37,9 @@ class RunBenchJobWithInit(params:ParamEntity) extends SpoutTops {
     var ssc:StreamingContext=null
 
     if (!params.testWAL) {
-      ssc = new StreamingContext(conf, Seconds(params.batchInterval))
+      ssc = new StreamingContext(conf, Milliseconds(params.batchInterval))
     } else {
-      val create = ()=> new StreamingContext(conf, Seconds(params.batchInterval))
+      val create = ()=> new StreamingContext(conf, Milliseconds(params.batchInterval))
       ssc = StreamingContext.getOrCreate(params.path, create)
       ssc.checkpoint(params.path)
     }

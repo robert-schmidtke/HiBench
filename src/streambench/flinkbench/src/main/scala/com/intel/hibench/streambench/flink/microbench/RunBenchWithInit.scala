@@ -46,9 +46,15 @@ class RunBenchJobWithInit(params: ParameterTool) extends SpoutTops {
     val lines: DataStream[String] = createDirectStream(env)
     val parallelism = lines.getParallelism
     val keyedLines = lines.keyBy(_ => (System.currentTimeMillis % parallelism).toInt)
-    val batchInterval = params.getInt("hibench.streamingbench.batch_interval")
+    val batchInterval = params.getInt("hibench.streamingbench.batch_interval") *
+      (params.get("hibench.streamingbench.batch_timeunit", "s") match {
+        case "ms" => 1
+        case "s" => 1000
+        case null => 1000
+        case tu => throw new RuntimeException(s"Invalid unit of time: '$tu'")
+      })
     val windowedLines = if (batchInterval > 0)
-      processStreamData[TimeWindow](keyedLines.timeWindow(Time.of(batchInterval, TimeUnit.SECONDS)), env)
+      processStreamData[TimeWindow](keyedLines.timeWindow(Time.of(batchInterval, TimeUnit.MILLISECONDS)), env)
     else
       processStreamData[GlobalWindow](keyedLines.countWindow(1), env)
     

@@ -47,8 +47,8 @@ class LatencyListener(ssc: StreamingContext, params: ParamEntity) extends Stream
 
     if (!thread.isAlive) {
       totalRecords += recordThisBatch
-      BenchLogUtil.logMsg("LatencyController:    this batch: " + recordThisBatch)
-      BenchLogUtil.logMsg("LatencyController: total records: " + totalRecords)
+      // BenchLogUtil.logMsg("LatencyController:    this batch: " + recordThisBatch)
+      // BenchLogUtil.logMsg("LatencyController: total records: " + totalRecords)
     }
 
     if (totalRecords >= params.recordCount * params.numProducers) {
@@ -58,10 +58,10 @@ class LatencyListener(ssc: StreamingContext, params: ParamEntity) extends Stream
         val totalTime = (endTime-startTime).toDouble/1000
         //This is weighted avg of every batch process time. The weight is records processed int the batch
         val avgLatency = totalDelay.toDouble/totalRecords
-        if (avgLatency > params.batchInterval.toDouble*1000)
+        if (avgLatency > params.batchInterval.toDouble)
           BenchLogUtil.logMsg("WARNING:SPARK CLUSTER IN UNSTABLE STATE. TRY REDUCE INPUT SPEED")
 
-        val avgLatencyAdjust = avgLatency + params.batchInterval.toDouble*500
+        val avgLatencyAdjust = avgLatency + params.batchInterval.toDouble
         val recordThroughput = params.recordCount / totalTime
         BenchLogUtil.logMsg("Batch count = " + batchCount)
         BenchLogUtil.logMsg("Total processing delay = " + totalDelay + " ms")

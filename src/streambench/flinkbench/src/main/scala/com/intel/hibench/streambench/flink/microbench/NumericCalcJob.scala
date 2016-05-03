@@ -49,7 +49,13 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
         separator = params.get("hibench.streamingbench.separator", separator)
         index = params.getInt("hibench.streamingbench.field_index", index)
         reportDir = params.get("hibench.report.dir", reportDir)
-        batchInterval = params.getInt("hibench.streamingbench.batch_interval", batchInterval)
+        batchInterval = params.getInt("hibench.streamingbench.batch_interval", batchInterval) *
+          (params.get("hibench.streamingbench.batch_timeunit", "s") match {
+            case "ms" => 1
+            case "s" => 1000
+            case null => 1000
+            case tu => throw new RuntimeException(s"Invalid unit of time: '$tu'")
+          })
         
         val nodes = params.get("hibench.custom.nodes") match {
           case s: String => s.split(",")
@@ -76,7 +82,7 @@ class NumericCalcJob(subClassParams: ParameterTool) extends RunBenchJobWithInit(
           val splits = line.trim.split(separator)
           if (index < splits.length) {
             val num = splits(index).toLong
-            (Math.max(m._1, currentTime), Math.min(m._2, currentTime - batchInterval * 1000), m._3 + num, m._4 + 1, m._5, m._6)
+            (Math.max(m._1, currentTime), Math.min(m._2, currentTime - batchInterval), m._3 + num, m._4 + 1, m._5, m._6)
           } else
             m
         }

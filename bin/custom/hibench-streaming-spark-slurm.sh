@@ -71,7 +71,8 @@ cat >> $HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions $KAFKA_DEFAULT_PARTITIONS
 hibench.streamingbench.scale.profile tiny
-hibench.streamingbench.batch_interval 10
+hibench.streamingbench.batch_interval 10000
+hibench.streamingbench.batch_timeunit ms
 hibench.streamingbench.copies 1
 hibench.streamingbench.testWAL false
 hibench.streamingbench.direct_mode true

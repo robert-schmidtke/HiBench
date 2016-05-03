@@ -38,7 +38,13 @@ object RunBench {
     val benchName = conf.getProperty("hibench.streamingbench.benchname")
     val topic = conf.getProperty("hibench.streamingbench.topic_name")
     val master = conf.getProperty("hibench.spark.master")
-    val batchInterval = conf.getProperty("hibench.streamingbench.batch_interval").toInt
+    val batchInterval = conf.getProperty("hibench.streamingbench.batch_interval").toInt *
+      (conf.getProperty("hibench.streamingbench.batch_timeunit") match {
+        case "ms" => 1
+        case "s" => 1000
+        case null => 1000
+        case tu => throw new RuntimeException(s"Invalid unit of time: '$tu'")
+      })
     val zkHost = conf.getProperty("hibench.streamingbench.zookeeper.host")
     val consumerGroup = conf.getProperty("hibench.streamingbench.consumer_group")
     val kafkaThreads = conf.getProperty("hibench.streamingbench.receiver_nodes").toInt

@@ -73,7 +73,7 @@ class NumericCalcJob(subClassParams: ParamEntity, fieldIndex: Int, separator: St
   }
 
   override def postTerminationHook() = {
-    history_statistics.min = history_statistics.min - 1000 * subClassParams.batchInterval
+    history_statistics.min = history_statistics.min - subClassParams.batchInterval
     BenchLogUtil.logMsg("Latest time: " + history_statistics.max)
     BenchLogUtil.logMsg("Earliest time: " + history_statistics.min)
     BenchLogUtil.logMsg("Value sum: " + history_statistics.sum)
