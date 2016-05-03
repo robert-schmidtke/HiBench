@@ -1,7 +1,6 @@
 #!/bin/bash
 
 #PBS -N hibench-streaming
-#PBS -l walltime=24:00:00
 #PBS -j oe
 #PBS -l gres=ccm
 
@@ -59,13 +58,12 @@ broker_list=\$(join_array ":\${KAFKA_PORT}," \${KAFKA_NODES[@]}):\$KAFKA_PORT
 \$HADOOP_PREFIX/bin/hadoop fs -mkdir -p hdfs://\$HADOOP_NAMENODE:8020/tmp/spark-events
 
 cores=4
-#parallelism=770
 
 cp \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf.template \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf
 cat >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf << EOL
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions \$KAFKA_DEFAULT_PARTITIONS
-hibench.streamingbench.scale.profile large
+hibench.streamingbench.scale.profile larger
 hibench.streamingbench.batch_interval 10000
 hibench.streamingbench.batch_timeunit ms
 hibench.streamingbench.copies 1
@@ -94,11 +92,11 @@ spark.eventLog.enabled true
 spark.eventLog.dir hdfs://\$HADOOP_NAMENODE:8020/tmp/spark-events
 EOL
 
-#\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
 \$HIBENCH_HOME/workloads/streamingbench/prepare/initTopic.sh
 NO_DATA1=true \$HIBENCH_HOME/workloads/streamingbench/prepare/genSeedDataset.sh
-#\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
-#\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
 echo "\$(date): Submitting Spark Job"
 \$HIBENCH_HOME/workloads/streamingbench/spark/bin/run.sh 2>&1 &
 SPARK_PID=\$!
@@ -109,7 +107,7 @@ echo "\$(date): Starting data generation on \${PRODUCER_NODES[@]}"
 \$HIBENCH_HOME/workloads/streamingbench/prepare/gendata.sh "\${PRODUCER_NODES[@]}"
 echo "\$(date): Data generation done"
 sleep 120s
-#\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
 
 echo "\$(date): Stopping Kafka"
 \$HIBENCH_HOME/bin/custom/stop-kafka-pbs.sh
@@ -124,8 +122,8 @@ echo "\$(date): Stopping Zookeeper done"
 sleep 45s
 
 # job history files are moved to the done folder every 180s
-#sleep 240s
-#\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-streaming-ssd.\$PBS_JOBID-history
+sleep 240s
+\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-streaming-ssd.\$PBS_JOBID-history
 \$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/spark-events \$HIBENCH_HOME/bin/custom/hibench-streaming-ssd.\$PBS_JOBID-sparkhistory
 
 \$HIBENCH_HOME/bin/custom/stop-hdfs-ssh-ssd.sh

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 #PBS -N hibench-streaming
-#PBS -l walltime=24:00:00
 #PBS -j oe
 #PBS -l gres=ccm
 
@@ -46,7 +45,6 @@ cp \$FLINK_HOME/conf/flink-conf.yaml.template \$FLINK_HOME/conf/flink-conf.yaml
 sed -i "/^jobmanager\.rpc\.address/c\jobmanager.rpc.address: \$HADOOP_NAMENODE" \$FLINK_HOME/conf/flink-conf.yaml
 sed -i "/^# fs\.hdfs\.hadoopconf/c\fs.hdfs.hadoopconf: \$HADOOP_CONF_DIR" \$FLINK_HOME/conf/flink-conf.yaml
 sed -i "/^# taskmanager\.tmp\.dirs/c\taskmanager.tmp.dirs: /tmp/$USER/hadoop-tmp/nm-local-dir" \$FLINK_HOME/conf/flink-conf.yaml
-#sed -i "/^# taskmanager\.network\.numberOfBuffers/c\taskmanager.network.numberOfBuffers: 131072" \$FLINK_HOME/conf/flink-conf.yaml
 
 echo "Starting Zookeeper \$(date)"
 \$HIBENCH_HOME/bin/custom/start-zookeeper-pbs.sh
@@ -64,13 +62,12 @@ broker_list=\$(join_array ":\${KAFKA_PORT}," \${KAFKA_NODES[@]}):\$KAFKA_PORT
 node_list=\$(join_array "," \${NODES[@]})
 
 cores=4
-#parallelism=770
 
 cp \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf.template \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf
 cat >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf << EOL
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions \$KAFKA_DEFAULT_PARTITIONS
-hibench.streamingbench.scale.profile large
+hibench.streamingbench.scale.profile larger
 hibench.streamingbench.batch_interval 10000
 hibench.streamingbench.batch_timeunit ms
 hibench.streamingbench.copies 1
@@ -87,10 +84,6 @@ mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
 hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * \$cores))
 hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * \$cores))
-#hibench.yarn.executor.num \$NUM_HADOOP_DATANODES
-#hibench.yarn.executor.memory 20G
-#hibench.yarn.executor.cores \$cores
-#hibench.yarn.driver.memory 8G
 hibench.yarn.taskmanager.num \$NUM_HADOOP_DATANODES
 hibench.yarn.taskmanager.memory 20480
 hibench.yarn.taskmanager.slots \$cores
@@ -104,11 +97,11 @@ EOL
 
 head -n\${#NODES[@]} \$skew_file >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf
 
-#\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
 \$HIBENCH_HOME/workloads/streamingbench/prepare/initTopic.sh
 NO_DATA1=true \$HIBENCH_HOME/workloads/streamingbench/prepare/genSeedDataset.sh
-#\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
-#\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
 echo "\$(date): Submitting Flink Job"
 \$HIBENCH_HOME/workloads/streamingbench/flink/bin/run.sh 2>&1 &
 FLINK_PID=\$!
@@ -119,7 +112,7 @@ echo "\$(date): Starting data generation on \${PRODUCER_NODES[@]}"
 \$HIBENCH_HOME/workloads/streamingbench/prepare/gendata.sh "\${PRODUCER_NODES[@]}"
 echo "\$(date): Data generation done"
 sleep 120s
-#\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
 
 # this should kill Flink too
 echo "\$(date): Stopping Kafka"
@@ -128,12 +121,6 @@ echo "\$(date): Stopping Kafka done"
 
 sleep 30s
 
-#echo "\$(date): Killing Flink"
-#kill -9 \$FLINK_PID
-#echo "\$(date): Killing Flink done"
-
-#sleep 30s
-
 echo "\$(date): Stopping Zookeeper"
 \$HIBENCH_HOME/bin/custom/stop-zookeeper-pbs.sh
 echo "\$(date): Stopping Zookeeper done"
@@ -141,8 +128,8 @@ echo "\$(date): Stopping Zookeeper done"
 sleep 45s
 
 # job history files are moved to the done folder every 180s
-#sleep 240s
-#\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-streaming.\$PBS_JOBID-history
+sleep 240s
+\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-streaming.\$PBS_JOBID-history
 
 \$HIBENCH_HOME/bin/custom/stop-hdfs-ssh-lustre.sh
 

@@ -4,10 +4,8 @@
 #SBATCH --exclusive
 #SBATCH --open-mode=append
 
-export NUM_KAFKA_NODES=2
+export NUM_KAFKA_NODES=4
 source /scratch/$USER/HiBench/bin/custom/env-slurm.sh
-
-#$HOME/collectl-slurm/collectl_slurm.sh start
 
 cp $HIBENCH_HOME/conf/99-user_defined_properties.conf.template $HIBENCH_HOME/conf/99-user_defined_properties.conf
 sed -i "/^hibench\.hadoop\.home/c\hibench.hadoop.home $HADOOP_HOME" $HIBENCH_HOME/conf/99-user_defined_properties.conf
@@ -39,15 +37,6 @@ cat >> $SPARK_HOME/conf/spark-env.sh << EOL
 export SPARK_DIST_CLASSPATH=$($HADOOP_PREFIX/bin/hadoop --config $HADOOP_CONF_DIR classpath)
 EOL
 
-#echo "Creating local Flink folders $(date)"
-#srun -N$SLURM_JOB_NUM_NODES mkdir -p /local/$USER/flink/$SLURM_JOB_ID
-#echo "Creating local Flink folders done $(date)"
-
-#cp $FLINK_HOME/conf/flink-conf.yaml.template $FLINK_HOME/conf/flink-conf.yaml
-#sed -i "/^jobmanager\.rpc\.address/c\jobmanager.rpc.address: $HADOOP_NAMENODE" $FLINK_HOME/conf/flink-conf.yaml
-#sed -i "/^# fs\.hdfs\.hadoopconf/c\fs.hdfs.hadoopconf: $HADOOP_CONF_DIR" $FLINK_HOME/conf/flink-conf.yaml
-#sed -i "/^# taskmanager\.tmp\.dirs/c\taskmanager.tmp.dirs: /local/$USER/flink/$SLURM_JOB_ID"
-
 echo "Starting Zookeeper $(date)"
 srun --nodes=1-1 --nodelist=$ZOOKEEPER_NODE $HIBENCH_HOME/bin/custom/start-zookeeper-slurm.sh
 echo "Starting Zookeeper done $(date)"
@@ -70,7 +59,7 @@ cp $HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf
 cat >> $HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf << EOL
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions $KAFKA_DEFAULT_PARTITIONS
-hibench.streamingbench.scale.profile tiny
+hibench.streamingbench.scale.profile larger
 hibench.streamingbench.batch_interval 10000
 hibench.streamingbench.batch_timeunit ms
 hibench.streamingbench.copies 1
@@ -87,63 +76,38 @@ mapreduce.client.submit.file.replication 1
 hibench.default.map.parallelism $(($NUM_HADOOP_DATANODES * $cores))
 hibench.default.shuffle.parallelism $(($NUM_HADOOP_DATANODES * $cores))
 hibench.yarn.executor.num $NUM_HADOOP_DATANODES
-#hibench.yarn.executor.memory 39G
 hibench.yarn.executor.memory 38G
 hibench.yarn.executor.cores $cores
-#hibench.yarn.driver.memory 16G
 hibench.yarn.driver.memory 15G
-#hibench.yarn.taskmanager.num $NUM_HADOOP_DATANODES
-#hibench.yarn.taskmanager.memory 4096
-#hibench.yarn.taskmanager.slots 4
-#hibench.yarn.jobmanager.memory 3072
-#flink.taskmanager.memory 4096
-#flink.jobmanager.memory 3072
 
-#spark.driver.memory 16G
 spark.driver.memory 15G
 spark.executor.cores $cores
-#spark.executor.memory 39G
 spark.executor.memory 38G
 spark.eventLog.enabled true
 spark.eventLog.dir hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events
 EOL
 
-#$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
+$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 echo "$(date): Initializing topics and generating seed data set"
 $HIBENCH_HOME/workloads/streamingbench/prepare/initTopic.sh
 NO_DATA1=true $HIBENCH_HOME/workloads/streamingbench/prepare/genSeedDataset.sh
 echo "$(date): Initializing topics and generating seed data set done"
-#$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
+$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 echo "$(date): Submitting Spark Job"
 $HIBENCH_HOME/workloads/streamingbench/spark/bin/run.sh 2>&1 &
 SPARK_PID=$!
 echo "$(date): Spark Job running as PID ${SPARK_PID}"
-#$HIBENCH_HOME/workloads/streamingbench/flink/bin/run.sh 2>&1 &
-#FLINK_PID=$!
-#echo "Flink Job running as PID ${FLINK_PID}"
 sleep 30s
 echo "$(date): Starting data generation"
 $HIBENCH_HOME/workloads/streamingbench/prepare/gendata.sh
 echo "$(date): Data generation done"
 sleep 30s
-#echo "$(date): Killing Spark Job, PID: ${SPARK_PID}"
-#kill -9 $SPARK_PID
-#sleep 30s
-#echo "$(date): Killed Spark Job, PID: ${SPARK_PID}"
-#echo "Killing Flink Job, PID: ${FLINK_PID}"
-#kill -9 $FLINK_PID
-#sleep 30s
-#echo "Killed Flink Job, PID: ${FLINK_PID}"
-#$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
+$HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 
 # job history files are moved to the done folder every 180s
-#sleep 240s
-#$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done $HIBENCH_HOME/bin/custom/hibench-streaming.$SLURM_JOB_ID-history
+sleep 240s
+$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done $HIBENCH_HOME/bin/custom/hibench-streaming.$SLURM_JOB_ID-history
 $HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events $HIBENCH_HOME/bin/custom/hibench-streaming.$SLURM_JOB_ID-sparkhistory
-
-#echo "Deleting local Flink folders $(date)"
-#srun -N$SLURM_JOB_NUM_NODES rm -rf /local/$USER/flink/$SLURM_JOB_ID
-#echo "Deleting local Flink folders done $(date)"
 
 echo "Stopping Kafka on ${KAFKA_NODES[@]} $(date)"
 srun -N$NUM_KAFKA_NODES --nodelist=$(join , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/stop-kafka-slurm.sh
@@ -172,5 +136,3 @@ echo "Cleaning local directories done"
 
 rm -rf $HADOOP_PREFIX/conf*
 rm -rf $HADOOP_PREFIX/log*
-
-#$HOME/collectl-slurm/collectl_slurm.sh stop -savelogs
