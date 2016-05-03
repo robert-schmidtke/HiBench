@@ -44,14 +44,14 @@ echo "Starting Zookeeper done $(date)"
 sleep 10s
 
 echo "Starting Kafka on ${KAFKA_NODES[@]} $(date)"
-srun -N$NUM_KAFKA_NODES --nodelist=$(join , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/start-kafka-slurm.sh
+srun -N$NUM_KAFKA_NODES --nodelist=$(join_array , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/start-kafka-slurm.sh
 echo "Starting Kafka done $(date)"
 
 sleep 60s
 
 $HADOOP_PREFIX/bin/hadoop fs -mkdir -p hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events
 
-broker_list=$(join ":${KAFKA_PORT}," ${KAFKA_NODES[@]}):$KAFKA_PORT
+broker_list=$(join_array ":${KAFKA_PORT}," ${KAFKA_NODES[@]}):$KAFKA_PORT
 
 cores=4
 
@@ -110,7 +110,7 @@ $HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/hadoo
 $HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events $HIBENCH_HOME/bin/custom/hibench-streaming.$SLURM_JOB_ID-sparkhistory
 
 echo "Stopping Kafka on ${KAFKA_NODES[@]} $(date)"
-srun -N$NUM_KAFKA_NODES --nodelist=$(join , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/stop-kafka-slurm.sh
+srun -N$NUM_KAFKA_NODES --nodelist=$(join_array , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/stop-kafka-slurm.sh
 echo "Stopping Kafka done $(date)"
 
 sleep 10s

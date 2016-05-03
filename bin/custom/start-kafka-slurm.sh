@@ -22,6 +22,7 @@ cp $KAFKA_HOME/config/server.properties $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostn
 
 mkdir -p /local/$KAFKA_LOCAL_DIR
 sed -i "/^broker\.id/c\broker.id=$broker_id" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties
+sed -i "/^num\.network\.threads/c\num.network.threads=4" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties
 sed -i "/^port/c\port=$KAFKA_PORT" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties
 sed -i "/^log\.dirs/c\log.dirs=/local/$KAFKA_LOCAL_DIR" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties
 sed -i "/^num\.partitions/c\num.partitions=$KAFKA_DEFAULT_PARTITIONS" $KAFKA_HOME/config/$SLURM_JOB_ID/$(hostname).properties

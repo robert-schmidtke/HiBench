@@ -21,7 +21,6 @@ export HADOOP_HOME=$HADOOP_PREFIX
 export HADOOP_CONF_DIR="$HADOOP_PREFIX/conf/$SLURM_JOB_ID"
 
 export SPARK_HOME=/scratch/$USER/spark-1.6.0-bin-without-hadoop
-
 #export FLINK_HOME=/scratch/$USER/flink-0.10.2
 export FLINK_HOME=/scratch/$USER/flink/build-target
 
@@ -30,21 +29,25 @@ export HIBENCH_HOME=/scratch/$USER/HiBench
 export ZOOKEEPER_HOME=/scratch/$USER/zookeeper-3.3.6
 export KAFKA_HOME=/scratch/$USER/kafka_2.10-0.8.1
 
-nodes=(`scontrol show hostnames`)
+NODES=(`scontrol show hostnames`)
+export NODES
 export NUM_KAFKA_NODES=${NUM_KAFKA_NODES:-0}
-export NUM_HADOOP_NODES=$((${#nodes[@]} - $NUM_KAFKA_NODES))
+export NUM_HADOOP_NODES=$((${#NODES[@]} - $NUM_KAFKA_NODES))
 if [ $NUM_HADOOP_NODES -lt 2 ]; then
   echo "Please specify at least two nodes."
   exit 1
 fi
 
-export HADOOP_NODES=(${nodes[@]:0:$NUM_HADOOP_NODES})
+export HADOOP_NODES=(${NODES[@]:0:$NUM_HADOOP_NODES})
 
 export HADOOP_NAMENODE=${HADOOP_NODES[0]}
 export HADOOP_DATANODES=(${HADOOP_NODES[@]:1})
 export NUM_HADOOP_DATANODES=${#HADOOP_DATANODES[@]}
 
-export KAFKA_NODES=(${nodes[@]:$NUM_HADOOP_NODES:$NUM_KAFKA_NODES})
+export KAFKA_NODES=(${NODES[@]:$NUM_HADOOP_NODES:$NUM_KAFKA_NODES})
+
+export NUM_PRODUCER_NODES=${NUM_PRODUCER_NODES:-1}
+export PRODUCER_NODES=(${NODES[@]:0:$NUM_PRODUCER_NODES})
 
 # node-local directory for HDFS
 export HDFS_LOCAL_DIR="$USER/hdfs/$SLURM_JOB_ID"
@@ -61,4 +64,4 @@ export ZOOKEEPER_NODE=$HADOOP_NAMENODE
 export MAHOUT_HOME=/scratch/$USER/apache-mahout-distribution-0.11.1
 
 # util functions
-function join { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
+function join_array { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
