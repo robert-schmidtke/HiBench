@@ -125,7 +125,7 @@ sleep 45s
 # job history files are moved to the done folder every 180s
 #sleep 240s
 #\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-streaming-ssd.\$PBS_JOBID-history
-\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/spark-events \$HIBENCH_HOME/bin/custom/hibench-streaming.\$PBS_JOBID-sparkhistory
+\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/spark-events \$HIBENCH_HOME/bin/custom/hibench-streaming-ssd.\$PBS_JOBID-sparkhistory
 
 \$HIBENCH_HOME/bin/custom/stop-hdfs-ssh-ssd.sh
 
@@ -141,3 +141,4 @@ rm launch-$PBS_JOBID.sh
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/conf
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/logs
 rm -rf /flash/scratch5/$USER/hdfs
+rm -rf $WORK/kafka

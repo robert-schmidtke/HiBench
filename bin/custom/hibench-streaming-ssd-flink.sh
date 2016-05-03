@@ -163,3 +163,4 @@ rm $PBS_JOBID.skew
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/conf
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/logs
 rm -rf /flash/scratch5/$USER/hdfs
+rm -rf $WORK/kafka
