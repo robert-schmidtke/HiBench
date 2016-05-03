@@ -9,6 +9,8 @@ for node_count in 7 11 15; do
       fi
       echo "$node_count nodes, on lustre, using $engine, with interval of $batch_interval, depending on $ldepend"
       jobid=$(msub $ldepend -lnodes=$node_count:ppn=1 -lwalltime=24:00:00 -F "\"$batch_interval\""  hibench-streaming-lustre-$engine.sh)
+      jobid=($jobid)
+      jobid=${jobid[0]}
       ldepend="-ldepend=$jobid"
       echo $jobid
     done
