@@ -40,7 +40,7 @@ cat >> \$HIBENCH_HOME/conf/99-user_defined_properties.conf << EOL
 hibench.report.dir \\\${hibench.home}/report-streaming.$PBS_JOBID
 EOL
 
-#\$HIBENCH_HOME/bin/custom/start-hdfs-ssh-ssd.sh 262144 1
+\$HIBENCH_HOME/bin/custom/start-hdfs-ssh-ssd.sh 262144 1
 
 cp \$FLINK_HOME/conf/flink-conf.yaml.template \$FLINK_HOME/conf/flink-conf.yaml
 sed -i "/^jobmanager\.rpc\.address/c\jobmanager.rpc.address: \$HADOOP_NAMENODE" \$FLINK_HOME/conf/flink-conf.yaml
@@ -49,13 +49,13 @@ sed -i "/^# taskmanager\.tmp\.dirs/c\taskmanager.tmp.dirs: /tmp/$USER/hadoop-tmp
 #sed -i "/^# taskmanager\.network\.numberOfBuffers/c\taskmanager.network.numberOfBuffers: 131072" \$FLINK_HOME/conf/flink-conf.yaml
 
 echo "Starting Zookeeper \$(date)"
-#\$HIBENCH_HOME/bin/custom/start-zookeeper-pbs.sh
+\$HIBENCH_HOME/bin/custom/start-zookeeper-pbs.sh
 echo "Starting Zookeeper done \$(date)"
 
 #sleep 10s
 
 echo "Starting Kafka on \${KAFKA_NODES[@]} \$(date)"
-#\$HIBENCH_HOME/bin/custom/start-kafka-pbs.sh
+\$HIBENCH_HOME/bin/custom/start-kafka-pbs.sh
 echo "Starting Kafka on \${KAFKA_NODES[@]} done \$(date)"
 
 #sleep 60s
@@ -70,7 +70,7 @@ cp \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.con
 cat >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf << EOL
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions \$KAFKA_DEFAULT_PARTITIONS
-hibench.streamingbench.scale.profile tiny
+hibench.streamingbench.scale.profile large
 hibench.streamingbench.batch_interval 10
 hibench.streamingbench.copies 1
 hibench.streamingbench.testWAL false
@@ -102,8 +102,6 @@ hibench.custom.nodes \$node_list
 EOL
 
 head -n\${#NODES[@]} \$skew_file >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf
-
-exit
 
 #\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
 \$HIBENCH_HOME/workloads/streamingbench/prepare/initTopic.sh
