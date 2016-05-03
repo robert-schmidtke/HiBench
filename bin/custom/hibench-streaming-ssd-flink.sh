@@ -10,8 +10,15 @@ module load ccm java/jdk1.8.0_51
 module unload atp # abnormal termination processing
 cd $PBS_O_WORKDIR
 
+cat > detect-skew-$PBS_JOBID.sh << EOF
+#!/bin/bash
+echo "hibench.custom.nodes.\$(hostname).time \$(date +%s%3N)"
+EOF
+
 cat > launch-$PBS_JOBID.sh << EOF
 #!/bin/bash
+
+skew_file=\$1
 
 module load java/jdk1.8.0_51
 
@@ -33,7 +40,7 @@ cat >> \$HIBENCH_HOME/conf/99-user_defined_properties.conf << EOL
 hibench.report.dir \\\${hibench.home}/report-streaming.$PBS_JOBID
 EOL
 
-\$HIBENCH_HOME/bin/custom/start-hdfs-ssh-ssd.sh 262144 1
+#\$HIBENCH_HOME/bin/custom/start-hdfs-ssh-ssd.sh 262144 1
 
 cp \$FLINK_HOME/conf/flink-conf.yaml.template \$FLINK_HOME/conf/flink-conf.yaml
 sed -i "/^jobmanager\.rpc\.address/c\jobmanager.rpc.address: \$HADOOP_NAMENODE" \$FLINK_HOME/conf/flink-conf.yaml
@@ -42,18 +49,19 @@ sed -i "/^# taskmanager\.tmp\.dirs/c\taskmanager.tmp.dirs: /tmp/$USER/hadoop-tmp
 #sed -i "/^# taskmanager\.network\.numberOfBuffers/c\taskmanager.network.numberOfBuffers: 131072" \$FLINK_HOME/conf/flink-conf.yaml
 
 echo "Starting Zookeeper \$(date)"
-\$HIBENCH_HOME/bin/custom/start-zookeeper-pbs.sh
+#\$HIBENCH_HOME/bin/custom/start-zookeeper-pbs.sh
 echo "Starting Zookeeper done \$(date)"
 
-sleep 10s
+#sleep 10s
 
 echo "Starting Kafka on \${KAFKA_NODES[@]} \$(date)"
-\$HIBENCH_HOME/bin/custom/start-kafka-pbs.sh
+#\$HIBENCH_HOME/bin/custom/start-kafka-pbs.sh
 echo "Starting Kafka on \${KAFKA_NODES[@]} done \$(date)"
 
-sleep 60s
+#sleep 60s
 
 broker_list=\$(join_array ":\${KAFKA_PORT}," \${KAFKA_NODES[@]}):\$KAFKA_PORT
+node_list=\$(join_array "," \${NODES[@]})
 
 cores=4
 #parallelism=770
@@ -62,8 +70,8 @@ cp \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.con
 cat >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf << EOL
 hibench.streamingbench.benchname statistics
 hibench.streamingbench.partitions \$KAFKA_DEFAULT_PARTITIONS
-hibench.streamingbench.scale.profile large
-hibench.streamingbench.batch_interval 0
+hibench.streamingbench.scale.profile tiny
+hibench.streamingbench.batch_interval 10
 hibench.streamingbench.copies 1
 hibench.streamingbench.testWAL false
 hibench.streamingbench.direct_mode true
@@ -88,7 +96,14 @@ hibench.yarn.taskmanager.slots \$cores
 hibench.yarn.jobmanager.memory 1792
 flink.taskmanager.memory 20480
 flink.jobmanager.memory 1792
+
+# for our time measurements to be able to take clock skew into account
+hibench.custom.nodes \$node_list
 EOL
+
+head -n\${#NODES[@]} \$skew_file >> \$HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf
+
+exit
 
 #\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
 \$HIBENCH_HOME/workloads/streamingbench/prepare/initTopic.sh
@@ -137,9 +152,15 @@ date
 
 EOF
 
+IFS=$'\n' read -d '' -r -a NODES < $PBS_NODEFILE
+chmod +x detect-skew-$PBS_JOBID.sh
+aprun -n${#NODES[@]} -N1 detect-skew-$PBS_JOBID.sh > $PBS_JOBID.skew
+rm detect-skew-$PBS_JOBID.sh
+
 chmod +x launch-$PBS_JOBID.sh
-ccmrun ./launch-$PBS_JOBID.sh
+ccmrun ./launch-$PBS_JOBID.sh "$(pwd $(dirname $PBS_JOBID.skew))/$PBS_JOBID.skew"
 rm launch-$PBS_JOBID.sh
+rm $PBS_JOBID.skew
 
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/conf
 rm -rf $WORK/hadoop/hadoop-dist/target/hadoop-2.7.1/logs
