@@ -104,7 +104,7 @@ object ScalaFlinkJoinBench {
 
     val nuv = uv.select('sourceIP, 'destUrl, 'adRevenue, 'visitDate).where('visitDate >= beginDate && 'visitDate <= endDate)
     val join = r.join(nuv).where('pageUrl === 'destUrl)
-    val result = join.select('sourceIP, 'pageRank.avg as 'avgPageRank, 'adRevenue.sum as 'totalRevenue).groupBy('sourceIP)
+    val result = join.groupBy('sourceIP).select('sourceIP, 'pageRank.avg as 'avgPageRank, 'adRevenue.sum as 'totalRevenue)
 
     val finalResult = result.toDataSet[Result].sortPartition("totalRevenue", Order.DESCENDING).setParallelism(1)
 
