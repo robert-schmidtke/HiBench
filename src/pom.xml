@@ -110,6 +110,7 @@
         <module>mahout</module>
         <module>hivebench</module>
         <module>sparkbench</module>
+        <module>flinkbench</module>
         <module>pegasus</module>
         <module>autogen</module>
     </modules>
@@ -119,6 +120,7 @@
             <id>MR1</id>
             <properties>
                 <sparkbench.mr.version>1</sparkbench.mr.version>
+                <flinkbench.mr.version>1</flinkbench.mr.version>
             </properties>
             <activation>
                 <property><name>MR1</name></property>
@@ -131,6 +133,7 @@
             </build>
             <properties>
                 <sparkbench.mr.version>2</sparkbench.mr.version>
+                <flinkbench.mr.version>2</flinkbench.mr.version>
             </properties>
             <activation>
                 <property><name>!MR1</name></property>
