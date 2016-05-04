@@ -102,7 +102,7 @@ object ScalaFlinkJoinBench {
     val r = rankingsInput.toTable
     val uv = uservisitsInput.toTable
 
-    val nuv = uv.select('sourceIP, 'destUrl, 'adRevenue).where('visitDate >= beginDate && 'visitDate <= endDate)
+    val nuv = uv.select('sourceIP, 'destUrl, 'adRevenue, 'visitDate).where('visitDate >= beginDate && 'visitDate <= endDate)
     val join = r.join(nuv).where('pageUrl === 'destUrl)
     val result = join.select('sourceIP, 'pageRank.avg as 'avgPageRank, 'adRevenue.sum as 'totalRevenue).groupBy('sourceIP)
 
