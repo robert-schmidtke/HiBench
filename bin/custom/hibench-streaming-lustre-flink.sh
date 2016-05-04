@@ -149,6 +149,7 @@ rm detect-skew-$PBS_JOBID.sh
 chmod +x launch-$PBS_JOBID.sh
 ccmrun ./launch-$PBS_JOBID.sh "$(pwd $(dirname $PBS_JOBID.skew))/$PBS_JOBID.skew" $batch_interval
 rm launch-$PBS_JOBID.sh
+rm $PBS_JOBID.skew
 
 rm -rf $WORK2/hadoop/hadoop-dist/target/hadoop-2.7.1/conf
 rm -rf $WORK2/hadoop/hadoop-dist/target/hadoop-2.7.1/logs

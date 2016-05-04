@@ -5,6 +5,7 @@
 #SBATCH --open-mode=append
 
 export NUM_KAFKA_NODES=4
+export NUM_PRODUCER_NODES=4
 source /scratch/$USER/HiBench/bin/custom/env-slurm.sh
 
 cp $HIBENCH_HOME/conf/99-user_defined_properties.conf.template $HIBENCH_HOME/conf/99-user_defined_properties.conf
@@ -44,14 +45,14 @@ echo "Starting Zookeeper done $(date)"
 sleep 10s
 
 echo "Starting Kafka on ${KAFKA_NODES[@]} $(date)"
-srun -N$NUM_KAFKA_NODES --nodelist=$(join , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/start-kafka-slurm.sh
+srun -N$NUM_KAFKA_NODES --nodelist=$(join_array , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/start-kafka-slurm.sh
 echo "Starting Kafka done $(date)"
 
 sleep 60s
 
 $HADOOP_PREFIX/bin/hadoop fs -mkdir -p hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events
 
-broker_list=$(join ":${KAFKA_PORT}," ${KAFKA_NODES[@]}):$KAFKA_PORT
+broker_list=$(join_array ":${KAFKA_PORT}," ${KAFKA_NODES[@]}):$KAFKA_PORT
 
 cores=4
 
@@ -68,6 +69,7 @@ hibench.streamingbench.direct_mode true
 hibench.streamingbench.prepare.mode push
 hibench.streamingbench.prepare.push.records \${hibench.kmeans.num_of_samples}
 hibench.streamingbench.record_count \${hibench.kmeans.num_of_samples}
+hibench.streamingbench.num_producers $NUM_PRODUCER_NODES
 hibench.streamingbench.brokerList $broker_list
 
 dfs.replication 1
@@ -98,10 +100,10 @@ $HIBENCH_HOME/workloads/streamingbench/spark/bin/run.sh 2>&1 &
 SPARK_PID=$!
 echo "$(date): Spark Job running as PID ${SPARK_PID}"
 sleep 30s
-echo "$(date): Starting data generation"
-$HIBENCH_HOME/workloads/streamingbench/prepare/gendata.sh
+echo "$(date): Starting data generation on ${PRODUCER_NODES[@]}"
+$HIBENCH_HOME/workloads/streamingbench/prepare/gendata-slurm.sh "${PRODUCER_NODES[@]}"
 echo "$(date): Data generation done"
-sleep 30s
+sleep 120s
 $HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 
 # job history files are moved to the done folder every 180s
@@ -110,7 +112,7 @@ $HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/hadoo
 $HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/spark-events $HIBENCH_HOME/bin/custom/hibench-streaming.$SLURM_JOB_ID-sparkhistory
 
 echo "Stopping Kafka on ${KAFKA_NODES[@]} $(date)"
-srun -N$NUM_KAFKA_NODES --nodelist=$(join , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/stop-kafka-slurm.sh
+srun -N$NUM_KAFKA_NODES --nodelist=$(join_array , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/stop-kafka-slurm.sh
 echo "Stopping Kafka done $(date)"
 
 sleep 10s
