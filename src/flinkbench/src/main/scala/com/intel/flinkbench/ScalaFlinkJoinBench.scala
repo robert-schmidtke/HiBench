@@ -54,12 +54,12 @@ object ScalaFlinkJoinBench {
       avgDuration: Int
     )
     val rankingsInput: DataSet[Ranking] =
-      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], rankingsInputPath, job).map[Ranking](new MapFunction[(LongWritable, Text), Ranking] {
-      	override def map(value: (LongWritable, Text)) = {
-      	  val splits = value._2.toString.split(",")
-      	  new Ranking(splits(0), splits(1).toInt, splits(2).toInt)
+      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], rankingsInputPath, job).map[Ranking] {
+        (value: (LongWritable, Text)) => {
+          val Array(pageUrl, pageRank, avgDuration) = value._2.toString.split(",")
+          Ranking(pageUrl, pageRank.toInt, avgDuration.toInt)
       	}
-      })
+      }
 
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
     case class UserVisit(
@@ -74,12 +74,12 @@ object ScalaFlinkJoinBench {
       duration: Int
     )
     val uservisitsInput: DataSet[UserVisit] =
-      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], uservisitsInputPath, job).map[UserVisit](new MapFunction[(LongWritable, Text), UserVisit] {
-      	override def map(value: (LongWritable, Text)) = {
-      	  val splits = value._2.toString.split(",")
-      	  new UserVisit(splits(0), splits(1), dateFormat.parse(splits(2)).getTime, splits(3).toDouble, splits(4), splits(5), splits(6), splits(7), splits(8).toInt)
+      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], uservisitsInputPath, job).map[UserVisit] {
+        (value: (LongWritable, Text)) => {
+          val Array(sourceIP, destUrl, visitDate, adRevenue, userAgent, countryCode, languageCode, searchWord, duration) = value._2.toString.split(",")
+          UserVisit(sourceIP, destUrl, dateFormat.parse(visitDate).getTime, adRevenue.toDouble, userAgent, countryCode, languageCode, searchWord, duration.toInt)
         }
-      })
+      }
 
     // The actual query
     // SELECT sourceIP, avg(pageRank), sum(adRevenue) as totalRevenue FROM
@@ -101,11 +101,11 @@ object ScalaFlinkJoinBench {
     case class Result(sourceIP: String, avgPageRank: Double, totalRevenue: Double)
     val finalResult = result.toDataSet[Result].sortPartition("totalRevenue", Order.DESCENDING).setParallelism(1)
 
-    finalResult.map[(String, Double, Double)](new MapFunction[Result, (String, Double, Double)]{
-      override def map(value: Result) = {
+    finalResult.map[(String, Double, Double)] {
+      (value: Result) => {
       	(value.sourceIP, value.avgPageRank, value.totalRevenue)
       }
-    }).writeAsCsv(rankingsUservisitsOutputPath)
+    }.writeAsCsv(rankingsUservisitsOutputPath)
 
     env.execute("ScalaFlinkJoinBench")
   }
