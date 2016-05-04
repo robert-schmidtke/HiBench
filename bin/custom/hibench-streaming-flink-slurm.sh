@@ -5,7 +5,18 @@
 #SBATCH --open-mode=append
 
 export NUM_KAFKA_NODES=4
+export NUM_PRODUCER_NODES=4
 source /scratch/$USER/HiBench/bin/custom/env-slurm.sh
+
+cat > detect-skew-$SLURM_JOB_ID.sh << EOL
+#!/bin/bash
+echo "hibench.custom.nodes.\$(hostname).time \$(date +%s%3N)"
+EOL
+chmod +x detect-skew-$SLURM_JOB_ID.sh
+
+skew_file=$SLURM_JOB_ID.skew
+srun --nodes=${#NODES[@]} detect-skew-$SLURM_JOBID.sh > $skew_file
+rm detect-skew-$SLURM_JOB_ID.sh
 
 cp $HIBENCH_HOME/conf/99-user_defined_properties.conf.template $HIBENCH_HOME/conf/99-user_defined_properties.conf
 sed -i "/^hibench\.hadoop\.home/c\hibench.hadoop.home $HADOOP_HOME" $HIBENCH_HOME/conf/99-user_defined_properties.conf
@@ -37,7 +48,7 @@ echo "Creating local Flink folders done $(date)"
 cp $FLINK_HOME/conf/flink-conf.yaml.template $FLINK_HOME/conf/flink-conf.yaml
 sed -i "/^jobmanager\.rpc\.address/c\jobmanager.rpc.address: $HADOOP_NAMENODE" $FLINK_HOME/conf/flink-conf.yaml
 sed -i "/^# fs\.hdfs\.hadoopconf/c\fs.hdfs.hadoopconf: $HADOOP_CONF_DIR" $FLINK_HOME/conf/flink-conf.yaml
-sed -i "/^# taskmanager\.tmp\.dirs/c\taskmanager.tmp.dirs: /local/$USER/flink/$SLURM_JOB_ID"
+sed -i "/^# taskmanager\.tmp\.dirs/c\taskmanager.tmp.dirs: /local/$USER/flink/$SLURM_JOB_ID" $FLINK_HOME/conf/flink-conf.yaml
 
 echo "Starting Zookeeper $(date)"
 srun --nodes=1-1 --nodelist=$ZOOKEEPER_NODE $HIBENCH_HOME/bin/custom/start-zookeeper-slurm.sh
@@ -46,12 +57,13 @@ echo "Starting Zookeeper done $(date)"
 sleep 10s
 
 echo "Starting Kafka on ${KAFKA_NODES[@]} $(date)"
-srun -N$NUM_KAFKA_NODES --nodelist=$(join , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/start-kafka-slurm.sh
+srun -N$NUM_KAFKA_NODES --nodelist=$(join_array , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/start-kafka-slurm.sh
 echo "Starting Kafka done $(date)"
 
 sleep 60s
 
-broker_list=$(join ":${KAFKA_PORT}," ${KAFKA_NODES[@]}):$KAFKA_PORT
+broker_list=$(join_array ":${KAFKA_PORT}," ${KAFKA_NODES[@]}):$KAFKA_PORT
+node_list=$(join_array "," ${NODES[@]})
 
 cores=4
 
@@ -68,6 +80,7 @@ hibench.streamingbench.direct_mode true
 hibench.streamingbench.prepare.mode push
 hibench.streamingbench.prepare.push.records \${hibench.kmeans.num_of_samples}
 hibench.streamingbench.record_count \${hibench.kmeans.num_of_samples}
+hibench.streamingbench.num_producers $NUM_PRODUCER_NODES
 hibench.streamingbench.brokerList $broker_list
 
 dfs.replication 1
@@ -81,7 +94,12 @@ hibench.yarn.taskmanager.slots $cores
 hibench.yarn.jobmanager.memory 2048
 flink.taskmanager.memory 39936
 flink.jobmanager.memory 2048
+
+hibench.custom.nodes $node_list
 EOL
+
+head -n${#NODES[@]} $skew_file >> $HIBENCH_HOME/workloads/streamingbench/conf/10-streamingbench-userdefine.conf
+rm $skew_file
 
 $HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 $HIBENCH_HOME/workloads/streamingbench/prepare/initTopic.sh
@@ -92,10 +110,10 @@ $HIBENCH_HOME/workloads/streamingbench/flink/bin/run.sh 2>&1 &
 FLINK_PID=$!
 echo "Flink Job running as PID ${FLINK_PID}"
 sleep 30s
-echo "$(date): Starting data generation"
-$HIBENCH_HOME/workloads/streamingbench/prepare/gendata.sh
+echo "$(date): Starting data generation on ${PRODUCER_NODES[@]}"
+$HIBENCH_HOME/workloads/streamingbench/prepare/gendata-slurm.sh "${PRODUCER_NODES[@]}"
 echo "$(date): Data generation done"
-sleep 30s
+sleep 120s
 $HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 
 # job history files are moved to the done folder every 180s
@@ -103,7 +121,7 @@ sleep 240s
 $HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done $HIBENCH_HOME/bin/custom/hibench-terasort.$SLURM_JOB_ID-history
 
 echo "Stopping Kafka on ${KAFKA_NODES[@]} $(date)"
-srun -N$NUM_KAFKA_NODES --nodelist=$(join , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/stop-kafka-slurm.sh
+srun -N$NUM_KAFKA_NODES --nodelist=$(join_array , ${KAFKA_NODES[@]}) $HIBENCH_HOME/bin/custom/stop-kafka-slurm.sh
 echo "Stopping Kafka done $(date)"
 
 sleep 30s
