@@ -36,12 +36,6 @@ echo "Starting Hadoop $(date)"
 srun --nodes=1-1 --nodelist=$HADOOP_NAMENODE $HIBENCH_HOME/bin/custom/start-hdfs-slurm.sh 262144 1
 echo "Starting Hadoop done $(date)"
 
-# add Hadoop classpath to Spark after Hadoop is running
-cp $SPARK_HOME/conf/spark-env.sh.template $SPARK_HOME/conf/spark-env.sh
-cat >> $SPARK_HOME/conf/spark-env.sh << EOL
-export SPARK_DIST_CLASSPATH=$($HADOOP_PREFIX/bin/hadoop --config $HADOOP_CONF_DIR classpath)
-EOL
-
 sleep 60s
 
 cores=4
