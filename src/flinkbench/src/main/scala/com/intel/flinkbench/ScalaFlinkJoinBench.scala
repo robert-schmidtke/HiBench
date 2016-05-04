@@ -29,6 +29,30 @@ import org.apache.hadoop.io.Text
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapred.SequenceFileInputFormat
 
+case class Ranking(
+  pageUrl: String,
+  pageRank: Int,
+  avgDuration: Int
+)
+
+case class UserVisit(
+  sourceIP: String,
+  destUrl: String,
+  visitDate: Long,
+  adRevenue: Double,
+  userAgent: String,
+  countryCode: String,
+  languageCode: String,
+  searchWord: String,
+  duration: Int
+)
+
+case class Result(
+  sourceIP: String,
+  avgPageRank: Double,
+  totalRevenue: Double
+)
+
 object ScalaFlinkJoinBench {
   def main(args: Array[String]) {
     if (args.length < 3){
@@ -48,11 +72,6 @@ object ScalaFlinkJoinBench {
     // The value is a comma separated list
     val inputFormat = new SequenceFileInputFormat[LongWritable, Text]()
 
-    case class Ranking(
-      pageUrl: String,
-      pageRank: Int,
-      avgDuration: Int
-    )
     val rankingsInput: DataSet[Ranking] =
       env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], rankingsInputPath, job).map[Ranking] {
         (value: (LongWritable, Text)) => {
@@ -62,17 +81,6 @@ object ScalaFlinkJoinBench {
       }
 
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-    case class UserVisit(
-      sourceIP: String,
-      destUrl: String,
-      visitDate: Long,
-      adRevenue: Double,
-      userAgent: String,
-      countryCode: String,
-      languageCode: String,
-      searchWord: String,
-      duration: Int
-    )
     val uservisitsInput: DataSet[UserVisit] =
       env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], uservisitsInputPath, job).map[UserVisit] {
         (value: (LongWritable, Text)) => {
@@ -98,7 +106,6 @@ object ScalaFlinkJoinBench {
     val join = r.join(nuv).where('pageUrl === 'destUrl)
     val result = join.select('sourceIP, 'pageRank.avg as 'avgPageRank, 'adRevenue.sum as 'totalRevenue).groupBy('sourceIP)
 
-    case class Result(sourceIP: String, avgPageRank: Double, totalRevenue: Double)
     val finalResult = result.toDataSet[Result].sortPartition("totalRevenue", Order.DESCENDING).setParallelism(1)
 
     finalResult.map[(String, Double, Double)] {
