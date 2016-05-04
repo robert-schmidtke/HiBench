@@ -31,7 +31,7 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat
 
 case class Ranking(
   pageUrl: String,
-  pageRank: Int,
+  pageRank: Double,
   avgDuration: Int
 )
 
@@ -76,7 +76,7 @@ object ScalaFlinkJoinBench {
       env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], rankingsInputPath, job).map[Ranking] {
         (value: (LongWritable, Text)) => {
           val Array(pageUrl, pageRank, avgDuration) = value._2.toString.split(",")
-          Ranking(pageUrl, pageRank.toInt, avgDuration.toInt)
+          Ranking(pageUrl, pageRank.toDouble, avgDuration.toInt)
       	}
       }
 
