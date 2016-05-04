@@ -20,7 +20,8 @@ export HADOOP_PREFIX=/scratch/$USER/hadoop/hadoop-dist/target/hadoop-2.7.1
 export HADOOP_HOME=$HADOOP_PREFIX
 export HADOOP_CONF_DIR="$HADOOP_PREFIX/conf/$SLURM_JOB_ID"
 
-export SPARK_HOME=/scratch/$USER/spark-1.6.0-bin-without-hadoop
+#export SPARK_HOME=/scratch/$USER/spark-1.6.0-bin-without-hadoop
+export SPARK_HOME=/scratch/$USER/spark-1.6.0-bin-custom-spark
 #export FLINK_HOME=/scratch/$USER/flink-0.10.2
 export FLINK_HOME=/scratch/$USER/flink/build-target
 
