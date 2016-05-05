@@ -66,8 +66,17 @@ $HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 $HIBENCH_HOME/workloads/join/spark/scala/bin/run.sh
 $HIBENCH_HOME/bin/custom/dump_xfs_stats.sh
 
-echo "Printing result file list"
-$HADOOP_PREFIX/bin/hadoop fs -ls -R hdfs://$HADOOP_NAMENODE:8020/HiBench/Join/Output/rankings_uservisits_join
+#echo "Printing result file list"
+#result_files=$($HADOOP_PREFIX/bin/hadoop fs -ls -R hdfs://$HADOOP_NAMENODE:8020/HiBench/Join/Output/rankings_uservisits_join 2> /dev/null)
+#echo "$result_files"
+#result_files=($result_files)
+
+#i=7
+#while [ $i -lt ${#result_files[@]} ]; do
+#  echo "Printing top 10 results for ${result_files[$i]}"
+#  $HADOOP_PREFIX/bin/hadoop fs -cat ${result_files[$i]} | head -n10
+#  i=$(($i + 8))
+#done
 
 # job history files are moved to the done folder every 180s
 sleep 240s
