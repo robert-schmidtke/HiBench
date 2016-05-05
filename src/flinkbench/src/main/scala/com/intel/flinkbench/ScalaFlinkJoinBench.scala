@@ -57,7 +57,7 @@ case class Result(
 
 object ScalaFlinkJoinBench {
   def main(args: Array[String]) {
-    if (args.length < 3){
+    if (args.length != 3){
       System.err.println(s"Usage: $ScalaFlinkJoinBench <rankings input> <uservisits input> <rankings-uservisits join output>")
       System.exit(1)
     }
@@ -68,24 +68,19 @@ object ScalaFlinkJoinBench {
 
     val env = ExecutionEnvironment.getExecutionEnvironment
 
-    val job = new JobConf()
-    // TODO compression for input
-
     // The value is a comma separated list
     val inputFormat = new SequenceFileInputFormat[LongWritable, Text]()
 
     val rankingsInput: DataSet[Ranking] =
-      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], rankingsInputPath, job).flatMap[Ranking] {
+      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], rankingsInputPath).flatMap[Ranking] {
         (value: (LongWritable, Text)) => {
           Try {
             val Array(pageUrl, pageRank, avgDuration) = value._2.toString.split(",")
             Ranking(pageUrl, pageRank.toDouble, avgDuration.toInt)
           } match {
-          	case Success(ranking) => Iterator(ranking)
-          	case Failure(exception) => {
-          	  exception.printStackTrace
-          	  System.err.println(s"above exception for '${value._2.toString}'")
-          	  Iterator.empty
+            case Success(ranking) => Iterator(ranking)
+            case Failure(exception) => {
+              throw new RuntimeException(s"Error processing $Ranking '${value._2.toString}'", exception)
           	}
           }
       	}
@@ -93,7 +88,7 @@ object ScalaFlinkJoinBench {
 
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
     val uservisitsInput: DataSet[UserVisit] =
-      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], uservisitsInputPath, job).flatMap[UserVisit] {
+      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], uservisitsInputPath).flatMap[UserVisit] {
         (value: (LongWritable, Text)) => {
           Try {
             val Array(sourceIP, destUrl, visitDate, adRevenue, userAgent, countryCode, languageCode, searchWord, duration) = value._2.toString.split(",")
@@ -101,9 +96,7 @@ object ScalaFlinkJoinBench {
           } match {
           	case Success(uservisit) => Iterator(uservisit)
             case Failure(exception) => {
-              exception.printStackTrace
-              System.err.println(s"above exception for '${value._2.toString}")
-              Iterator.empty
+              throw new RuntimeException(s"Error processing $UserVisit: '${value._2.toString}", exception)
             }
           }
         }
@@ -134,6 +127,6 @@ object ScalaFlinkJoinBench {
       }
     }.writeAsCsv(rankingsUservisitsOutputPath)
 
-    env.execute("ScalaFlinkJoinBench")
+    env.execute(s"$ScalaFlinkJoinBench")
   }
 }
