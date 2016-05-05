@@ -26,4 +26,5 @@ for kafka_node in ${KAFKA_NODES[@]}; do
 
   ssh $kafka_node "find $KAFKA_CONFIG_DIR -maxdepth 0 -empty -exec rm -r {} \;"
   ssh $kafka_node "rm -rf $KAFKA_LOG_DIR"
+  ssh $kafka_node "rm -rf $KAFKA_HOME/logs/*"
 done
