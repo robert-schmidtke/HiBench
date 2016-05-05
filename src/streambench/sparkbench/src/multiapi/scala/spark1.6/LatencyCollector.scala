@@ -61,7 +61,7 @@ class LatencyListener(ssc: StreamingContext, params: ParamEntity) extends Stream
         if (avgLatency > params.batchInterval.toDouble)
           BenchLogUtil.logMsg("WARNING:SPARK CLUSTER IN UNSTABLE STATE. TRY REDUCE INPUT SPEED")
 
-        val avgLatencyAdjust = avgLatency + params.batchInterval.toDouble
+        val avgLatencyAdjust = avgLatency + params.batchInterval.toDouble/2.0
         val recordThroughput = params.recordCount / totalTime
         BenchLogUtil.logMsg("Batch count = " + batchCount)
         BenchLogUtil.logMsg("Total processing delay = " + totalDelay + " ms")
