@@ -29,6 +29,8 @@ import org.apache.hadoop.io.Text
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapred.SequenceFileInputFormat
 
+import scala.util._
+
 case class Ranking(
   pageUrl: String,
   pageRank: Double,
@@ -73,19 +75,37 @@ object ScalaFlinkJoinBench {
     val inputFormat = new SequenceFileInputFormat[LongWritable, Text]()
 
     val rankingsInput: DataSet[Ranking] =
-      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], rankingsInputPath, job).map[Ranking] {
+      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], rankingsInputPath, job).flatMap[Ranking] {
         (value: (LongWritable, Text)) => {
-          val Array(pageUrl, pageRank, avgDuration) = value._2.toString.split(",")
-          Ranking(pageUrl, pageRank.toDouble, avgDuration.toInt)
+          Try {
+            val Array(pageUrl, pageRank, avgDuration) = value._2.toString.split(",")
+            Ranking(pageUrl, pageRank.toDouble, avgDuration.toInt)
+          } match {
+          	case Success(ranking) => Iterator(ranking)
+          	case Failure(exception) => {
+          	  exception.printStackTrace
+          	  System.err.println(s"above exception for '${value._2.toString}'")
+          	  Iterator.empty
+          	}
+          }
       	}
       }
 
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
     val uservisitsInput: DataSet[UserVisit] =
-      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], uservisitsInputPath, job).map[UserVisit] {
+      env.readHadoopFile(inputFormat, classOf[LongWritable], classOf[Text], uservisitsInputPath, job).flatMap[UserVisit] {
         (value: (LongWritable, Text)) => {
-          val Array(sourceIP, destUrl, visitDate, adRevenue, userAgent, countryCode, languageCode, searchWord, duration) = value._2.toString.split(",")
-          UserVisit(sourceIP, destUrl, dateFormat.parse(visitDate).getTime, adRevenue.toDouble, userAgent, countryCode, languageCode, searchWord, duration.toInt)
+          Try {
+            val Array(sourceIP, destUrl, visitDate, adRevenue, userAgent, countryCode, languageCode, searchWord, duration) = value._2.toString.split(",")
+            UserVisit(sourceIP, destUrl, dateFormat.parse(visitDate).getTime, adRevenue.toDouble, userAgent, countryCode, languageCode, searchWord, duration.toInt)
+          } match {
+          	case Success(uservisit) => Iterator(uservisit)
+            case Failure(exception) => {
+              exception.printStackTrace
+              System.err.println(s"above exception for '${value._2.toString}")
+              Iterator.empty
+            }
+          }
         }
       }
 
