@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source $WORK/HiBench-ssd/bin/custom/env.sh
+source $WORK/HiBench-ssd/bin/custom/env-ssd.sh
 
 mkdir -p $HIBENCH_HOME/bin/custom/$PBS_JOBID.stats
 

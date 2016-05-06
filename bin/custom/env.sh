@@ -12,7 +12,8 @@ export HADOOP_PREFIX="$WORK2/hadoop/hadoop-dist/target/hadoop-2.7.1"
 export HADOOP_HOME=$HADOOP_PREFIX
 export HADOOP_CONF_DIR="$HADOOP_PREFIX/conf/$PBS_JOBID"
 
-export SPARK_HOME="$WORK2/spark-1.6.0-bin-without-hadoop"
+#export SPARK_HOME="$WORK2/spark-1.6.0-bin-without-hadoop"
+export SPARK_HOME="$WORK2/spark-1.6.0-bin-custom-spark"
 #export FLINK_HOME="$WORK2/flink-0.10.2"
 export FLINK_HOME="$WORK2/flink/build-target"
 
