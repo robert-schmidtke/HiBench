@@ -43,7 +43,7 @@ cores=4
 
 cp \$HIBENCH_HOME/workloads/join/conf/10-join-userdefine.conf.template \$HIBENCH_HOME/workloads/join/conf/10-join-userdefine.conf
 cat >> \$HIBENCH_HOME/workloads/join/conf/10-join-userdefine.conf << EOL
-hibench.scale.profile tiny
+hibench.scale.profile bigdata
 dfs.replication 1
 mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
@@ -62,12 +62,12 @@ flink.taskmanager.memory 20480
 flink.jobmanager.memory 1792
 EOL
 
-\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/reset_lustre_stats.sh
 \$HIBENCH_HOME/workloads/join/prepare/prepare.sh
-\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
-\$HIBENCH_HOME/bin/custom/reset_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/dump_lustre_stats.sh
+\$HIBENCH_HOME/bin/custom/reset_lustre_stats.sh
 \$HIBENCH_HOME/workloads/join/flink/scala/bin/run.sh
-\$HIBENCH_HOME/bin/custom/dump_dvs_stats.sh
+\$HIBENCH_HOME/bin/custom/dump_lustre_stats.sh
 
 #echo "Printing result file list"
 #result_files=\$(\$HADOOP_PREFIX/bin/hadoop fs -ls -R hdfs://\$HADOOP_NAMENODE:8020/HiBench/Join/Output/rankings_uservisits_join 2> /dev/null)
