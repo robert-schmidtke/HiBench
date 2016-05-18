@@ -20,7 +20,7 @@ date
 
 # $HOME/workspace/collectl-slurm/collectl_pbs.sh start
 
-source $WORK/HiBench-ssd/bin/custom/env.sh
+source $WORK/HiBench-ssd/bin/custom/env-ssd.sh
 
 cp \$HIBENCH_HOME/conf/99-user_defined_properties.conf.template \$HIBENCH_HOME/conf/99-user_defined_properties.conf
 sed -i "/^hibench\.hadoop\.home/c\hibench.hadoop.home \$HADOOP_HOME" \$HIBENCH_HOME/conf/99-user_defined_properties.conf
@@ -32,7 +32,7 @@ cat >> \$HIBENCH_HOME/conf/99-user_defined_properties.conf << EOL
 hibench.report.dir \\\${hibench.home}/report-terasort-ssd.$PBS_JOBID
 EOL
 
-$WORK/HiBench-ssd/bin/custom/start-hdfs-ssh-ssd.sh 262144 1
+\$HIBENCH_HOME/bin/custom/start-hdfs-ssh-ssd.sh 262144 1
 
 # add Hadoop classpath to Spark after Hadoop is running
 #cp \$SPARK_HOME/conf/spark-env.sh.template \$SPARK_HOME/conf/spark-env.sh
@@ -50,14 +50,14 @@ hibench.scale.profile tera
 dfs.replication 1
 mapred.submit.replication 1
 mapreduce.client.submit.file.replication 1
-#hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * 8))
-hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * 60))
-#hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * 8))
-hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * 60))
+hibench.default.map.parallelism 1024
+#hibench.default.map.parallelism \$((\$NUM_HADOOP_DATANODES * 60))
+hibench.default.shuffle.parallelism 1024
+#hibench.default.shuffle.parallelism \$((\$NUM_HADOOP_DATANODES * 60))
 hibench.yarn.executor.num \$NUM_HADOOP_DATANODES
-hibench.yarn.executor.memory 16G
+hibench.yarn.executor.memory 20G
 #hibench.yarn.executor.cores 8
-hibench.yarn.executor.cores 2
+hibench.yarn.executor.cores 4
 hibench.yarn.driver.memory 8G
 
 #spark.driver.memory 10G
@@ -80,7 +80,7 @@ sleep 240s
 \$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/hadoop-yarn/staging/history/done \$HIBENCH_HOME/bin/custom/hibench-terasort-ssd.\$PBS_JOBID-history
 #\$HADOOP_PREFIX/bin/hadoop fs -copyToLocal hdfs://\$HADOOP_NAMENODE:8020/tmp/spark-events \$HIBENCH_HOME/bin/custom/hibench-terasort-ssd.\$PBS_JOBID-sparkhistory
 
-$WORK/HiBench-ssd/bin/custom/stop-hdfs-ssh.sh
+\$HIBENCH_HOME/bin/custom/stop-hdfs-ssh-ssd.sh
 
 # $HOME/workspace/collectl-slurm/collectl_pbs.sh stop -savelogs
 
