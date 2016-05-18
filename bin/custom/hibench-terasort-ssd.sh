@@ -3,7 +3,6 @@
 #PBS -N hibench-terasort-ssd
 #PBS -l walltime=24:00:00
 #PBS -j oe
-#PBS -q mppq
 #PBS -l gres=ccm
 
 source /opt/modules/default/init/bash
