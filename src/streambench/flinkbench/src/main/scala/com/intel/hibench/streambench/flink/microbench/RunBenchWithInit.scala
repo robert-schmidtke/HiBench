@@ -67,7 +67,7 @@ class RunBenchJobWithInit(params: ParameterTool) extends SpoutTops {
     kafkaParams.setProperty("zookeeper.connect", params.get("hibench.streamingbench.zookeeper.host"))
     kafkaParams.setProperty("group.id", params.get("hibench.streamingbench.consumer_group"))
     kafkaParams.setProperty("auto.offset.reset", "smallest")
-    kafkaParams.setProperty("socket.receive.buffer.size", "1073741824")
+    kafkaParams.setProperty("socket.receive.buffer.bytes", "1073741824")
 
     println(s"Create direct kafka stream, args:$kafkaParams")
     env.addSource(new FlinkKafkaConsumer081[String](params.get("hibench.streamingbench.topic_name"), new SimpleStringSchema(), kafkaParams))
